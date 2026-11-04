@@ -1,0 +1,37 @@
+{
+  "test": "text",
+  "prompt": "请用一句话说明什么是太阳系。",
+  "seconds": 8.546910629000195,
+  "response": {
+    "id": "chatcmpl-fcbf296313d34f9488d75ae9",
+    "object": "chat.completion",
+    "created": 1793785060,
+    "model": "Qwen3.5-2B",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "太阳系是由太阳以及围绕其公转的八大行星、矮行星、小行星和彗星等天体组成的引力束缚系统。"
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 25,
+      "completion_tokens": 60,
+      "total_tokens": 85
+    },
+    "system_fingerprint": "fp_rkllm_vision"
+  },
+  "health_after_request": {
+    "status": "healthy",
+    "runtime": "official",
+    "active_requests": 0,
+    "max_concurrent": 1,
+    "timestamp": 1793785068,
+    "conversation_history": "client_managed",
+    "kv_policy": "clear_before_and_after_each_request",
+    "last_cleared_kv_positions": 0
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "checked_at_utc": "2026-11-04T09:36:04.916091+00:00",
+  "abort": {
+    "response": {
+      "status": "abort_requested",
+      "requests": [
+        {
+          "request_id": "chatcmpl-21f52aef32904608bd64ee69",
+          "abort_code": 0,
+          "status": "cancelled"
+        }
+      ]
+    },
+    "seconds_until_stream_closed": 0.24917672099945776,
+    "first_chunk": {
+      "id": "chatcmpl-21f52aef32904608bd64ee69",
+      "created": 1793784964,
+      "model": "Qwen3.5-2B",
+      "choices": [
+        {
+          "index": 0,
+          "delta": {
+            "content": "1"
+          },
+          "finish_reason": null
+        }
+      ]
+    },
+    "busy_clear": {
+      "detail": "Inference busy; abort and wait for idle first"
+    },
+    "idle_after_abort": {
+      "status": "healthy",
+      "runtime": "official",
+      "active_requests": 0,
+      "max_concurrent": 1,
+      "timestamp": 1793784967,
+      "conversation_history": "client_managed",
+      "kv_policy": "clear_before_and_after_each_request",
+      "last_cleared_kv_positions": 0
+    }
+  },
+  "explicit_clear": {
+    "status": "cleared",
+    "kv_positions": 0
+  },
+  "question_after_abort": {
+    "id": "chatcmpl-73f81aebf6354e169f23774e",
+    "object": "chat.completion",
+    "created": 1793784967,
+    "model": "Qwen3.5-2B",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "巴黎（Paris）。"
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 25,
+      "completion_tokens": 5,
+      "total_tokens": 30
+    },
+    "system_fingerprint": "fp_rkllm_vision"
+  },
+  "idle_after_success": {
+    "status": "healthy",
+    "runtime": "official",
+    "active_requests": 0,
+    "max_concurrent": 1,
+    "timestamp": 1793784970,
+    "conversation_history": "client_managed",
+    "kv_policy": "clear_before_and_after_each_request",
+    "last_cleared_kv_positions": 0
+  },
+  "idle_after_disconnect": {
+    "status": "healthy",
+    "runtime": "official",
+    "active_requests": 0,
+    "max_concurrent": 1,
+    "timestamp": 1793784972,
+    "conversation_history": "client_managed",
+    "kv_policy": "clear_before_and_after_each_request",
+    "last_cleared_kv_positions": 0
+  },
+  "invalid_image": {
+    "status": 500,
+    "response": {
+      "detail": "cannot identify image file <_io.BytesIO object at <memory-address>>"
+    },
+    "idle": {
+      "status": "healthy",
+      "runtime": "official",
+      "active_requests": 0,
+      "max_concurrent": 1,
+      "timestamp": 1793784973,
+      "conversation_history": "client_managed",
+      "kv_policy": "clear_before_and_after_each_request",
+      "last_cleared_kv_positions": 0
+    }
+  },
+  "idle_abort": {
+    "status": "idle",
+    "requests": []
+  }
+}

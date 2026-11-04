@@ -1,0 +1,37 @@
+{
+  "test": "image_b",
+  "prompt": "图中主要是什么动物？请用中文简短回答。",
+  "seconds": 12.56788143599988,
+  "response": {
+    "id": "chatcmpl-6438ed809e914a36a72057cc",
+    "object": "chat.completion",
+    "created": 1793785087,
+    "model": "Qwen3.5-2B",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "水牛"
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 33,
+      "completion_tokens": 3,
+      "total_tokens": 36
+    },
+    "system_fingerprint": "fp_rkllm_vision"
+  },
+  "health_after_request": {
+    "status": "healthy",
+    "runtime": "official",
+    "active_requests": 0,
+    "max_concurrent": 1,
+    "timestamp": 1793785100,
+    "conversation_history": "client_managed",
+    "kv_policy": "clear_before_and_after_each_request",
+    "last_cleared_kv_positions": 0
+  }
+}

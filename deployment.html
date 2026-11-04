@@ -1,0 +1,997 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Qwen3.5-2B RK3588 NPU 部署与复现</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:#18272f;background:#f3f6f5;font:16px/1.75 system-ui,-apple-system,"Segoe UI",sans-serif}main{max-width:1080px;margin:auto;padding:32px 24px 70px}header{padding:36px;border-radius:18px;color:#edf8f5;background:#163d3c}h1{font-size:36px;line-height:1.3;margin:10px 0 18px}.eyebrow{letter-spacing:.12em;font-size:12px;color:#9edbc4}.muted{font-size:14px;opacity:.8}nav{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0}nav a{background:white;border:1px solid #d7e1dd;padding:7px 14px;border-radius:30px;text-decoration:none}a{color:#086c61}section{margin:24px 0;padding:28px 32px;background:white;border:1px solid #dce5e0;border-radius:14px;scroll-margin-top:16px}h2{font-size:24px;color:#164b43;margin:0 0 18px}h3{font-size:19px;margin:28px 0 12px}p{margin:14px 0}code{font-family:ui-monospace,Consolas,monospace;overflow-wrap:anywhere}p code,td code{background:#eef3f1;padding:2px 5px;border-radius:4px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#112b31;color:#e1efec;border-radius:10px;padding:18px 20px;font-size:13px;line-height:1.65;tab-size:4}pre code{background:none}table{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px;table-layout:fixed}th,td{padding:11px;border-bottom:1px solid #dce5e0;text-align:left;vertical-align:top;overflow-wrap:anywhere}th{background:#edf4f0;color:#205349}details{border:1px solid #dce5e0;border-radius:8px;margin:12px 0;padding:12px}summary{cursor:pointer;color:#175d50;font-weight:600;overflow-wrap:anywhere}details pre{margin-bottom:0}@media(max-width:650px){main{padding:14px 10px 40px}header{padding:22px}h1{font-size:28px}section{padding:20px 16px}h2{font-size:21px}th,td{padding:8px;font-size:12px}pre{padding:14px 12px;font-size:12px}}@media print{body{background:white}main{max-width:none;padding:0}section{break-inside:auto;border:none;padding:12px 0}nav{display:none}pre{background:#eee;color:#111}header{background:#eee;color:#111}}</style></head><body><main><header><p class="eyebrow">RK3588 · 8GB · LOCAL INFERENCE</p>
+<h1>Qwen3.5-2B NPU 部署与复现</h1><p>官方来源权重 · 未量化 FP16 · 视觉问答 · DynamicUser · 无状态本地接口</p>
+<p class="muted">验证日期：2026-11-04。非官方部署教程。本文及脚本不包含模型、运行库或私人环境信息。</p></header>
+<nav><a href="#result">部署结果</a><a href="#prepare">准备</a><a href="#convert">转换</a><a href="#install">安装</a><a href="#api">调用</a><a href="#verify">验证</a><a href="#maintain">维护</a><a href="#files">完整配置</a><a href="#license">许可</a></nav><section id="result"><h2>1. 部署结果与范围</h2>
+<p>在 RK3588S、8GB 内存、ARM64 Linux 上完成 Qwen3.5-2B 的文本与图片问答。官方 BF16 来源权重经 Rockchip 工具转换为板端 FP16 格式；语言和视觉均设置不量化，没有使用 INT8/INT4。原始 Safetensors 不能直接交给该 NPU 运行。</p>
+<p>语言与视觉由 Rockchip NPU 运行；图像预处理、分词、采样和接口等工作仍会使用 CPU。服务使用现成 VLM 实现及范围有限的生命周期/管理接口改动，不提供 Agent 或工具执行能力。</p>
+<table><thead><tr><th>配置</th><th>值</th></tr></thead><tbody>
+<tr><td>主服务 / 主进程</td><td><code>qwen3.5-2b.service</code> / <code>qwen3.5-2b</code></td></tr>
+<tr><td>用户 / 权限</td><td>DynamicUser，附加 render、video 组；Socket 代理也使用 DynamicUser</td></tr>
+<tr><td>调用入口</td><td><code>/run/qwen3.5-2b/inference.sock</code>，0600；底层仅 <code>127.0.0.1:18080</code></td></tr>
+<tr><td>上下文 / 并发</td><td>服务上下文 2048；语言产物上限 4096；同时执行 1 个请求</td></tr>
+<tr><td>视觉</td><td>448×448，单图片输入；196 个视觉 token，单输出 [196,2048]</td></tr>
+<tr><td>资源边界</td><td>systemd MemoryMax=6G；单实例，不同时加载旧模型</td></tr>
+<tr><td>会话策略</td><td>keep_history=0；每次请求前后清 KV，并核验位置数为 0；不启用跨请求缓存复用</td></tr>
+</tbody></table>
+<p>客户端通过完整 <code>messages</code> 传递所需历史；开启新对话时在客户端清空历史。请求内生成仍使用 KV 来避免重复计算，清理发生在请求结束后。模型权重和运行时预分配缓冲继续常驻，清缓存不会使进程内存降至零。</p></section><section id="prepare"><h2>2. 先检查环境与依赖许可</h2>
+<p>目标板需要可工作的官方兼容 RKNPU 驱动。本次验证内核为 <code>6.1.115-vendor-rk35xx</code>、驱动 <code>0.9.8</code>。不要根据芯片名称就假定任意主线内核可直接使用该运行库；换内核不包含在安装脚本中。</p><pre><code class="bash">uname -m
+uname -r
+cat /sys/kernel/debug/rknpu/version
+ls -l /dev/dri/card* /dev/dri/renderD*
+getent group render video
+free -h
+swapon --show
+ss -lntH &#x27;sport = :18080&#x27;</code></pre>
+<p>检查应为 aarch64，驱动可读，DRM 设备属于相应组；端口没有被其他实例占用。保留系统及其他业务内存余量，本次系统已有 swap，未验证完全关闭 swap 的长期运行行为。驱动使用 DRM card 节点，因此只添加 render 组不足；无需把 NPU 进程改成 root。</p>
+<p>转换放在 x86_64 Linux/WSL，板端只安装和运行。WSL 中先安装基础依赖：</p><pre><code class="bash">sudo apt-get update
+sudo apt-get install --no-install-recommends git curl ca-certificates libgl1 libglib2.0-0t64</code></pre>
+<p>模型与 SDK 从原始发行方下载并遵循各自许可证。第三方 VLM 服务未声明许可证，本资料不分发其源码，也不把它重新许可为 MIT。具体边界见本文许可章节。</p></section><section id="convert"><h2>3. 在电脑 WSL 转换官方模型</h2>
+<p>将本文附带的 <code>scripts</code> 目录放入 WSL 可访问的位置；它不应与模型产物目录混放。以下在包含 scripts 的复现资料根目录执行：</p><pre><code class="bash">export BUILD_DIR=/var/tmp/qwen3.5-2b-build
+bash scripts/convert_wsl.sh</code></pre>
+<p>脚本安装两个独立 Python 环境：语言环境使用 torch 2.6.0 CPU、transformers 5.8.0 和 RKLLM 1.3.1；视觉编译环境使用 torch 2.4.0 CPU、RKNN Toolkit2 2.5.0。Qwen3.5 视觉 ONNX 在语言环境导出，随后在视觉环境编译。无需在目标板转换，也不依赖电脑 GPU。</p>
+<p>下载来自固定 Qwen 官方 revision，校验原权重 SHA-256。语言设置 <code>do_quantization=False</code>、<code>optimization_level=0</code>、3 个 NPU 核心、导出上下文 4096；官方视觉导出脚本也不量化。转换完成后检查：</p><pre><code class="bash">cd /var/tmp/qwen3.5-2b-build/outputs
+sha256sum -c SHA256SUMS
+cat qwen35-conversion.json</code></pre>
+<p>输出为 <code>qwen3.5-2b_fp16_rk3588.rkllm</code>、<code>qwen3.5_vision_rk3588.rknn</code> 和校验清单。模型只保存在 WSL 构建目录与目标板，不放入复现资料或 Git 仓库。本次产物校验值见验证记录；重新构建时以本次生成的清单传输核验，并重新进行板端验收。</p></section><details><summary>本次语言模型转换记录与视觉产物散列</summary><pre><code class="json">{
+  &quot;source_repo&quot;: &quot;Qwen/Qwen3.5-2B&quot;,
+  &quot;source_revision&quot;: &quot;15852e8c16360a2fea060d615a32b45270f8a8fc&quot;,
+  &quot;toolkit&quot;: &quot;1.3.1&quot;,
+  &quot;do_quantization&quot;: false,
+  &quot;optimization_level&quot;: 0,
+  &quot;target_platform&quot;: &quot;rk3588&quot;,
+  &quot;num_npu_core&quot;: 3,
+  &quot;max_context&quot;: 4096,
+  &quot;output_file&quot;: &quot;qwen3.5-2b_fp16_rk3588.rkllm&quot;,
+  &quot;output_bytes&quot;: 4818689316,
+  &quot;sha256&quot;: &quot;e030a595dd848303808bd28f45fce6474285cbaeef55f882529b388ba3f94cb8&quot;
+}</code></pre><pre><code class="">56a94b1c8a5c00d579da5fc25a2c6f813bc16c1c9f70cd1477ed92e22be56b17  qwen3.5_vision_rk3588.rknn</code></pre></details><section id="install"><h2>4. 传输并安装目标板服务</h2>
+<p>下面是 Windows PowerShell 示例。将 <code>BOARD_HOST</code> 设为自己已配置好 SSH 的目标板主机名；路径使用环境变量和占位值。</p><pre><code class="powershell">$env:BOARD_HOST = &quot;your-board-host&quot;
+$ReproRoot = Join-Path $env:USERPROFILE &quot;OneDrive\Manual\Linux\LLM\Qwen3.5-2B&quot;
+$Artifacts = &quot;\\wsl.localhost\Debian\var\tmp\qwen3.5-2b-build\outputs&quot;
+ssh &quot;root@$env:BOARD_HOST&quot; &quot;install -d /opt/qwen3.5-2b/models /var/tmp/qwen35-repro&quot;
+scp &quot;$Artifacts\qwen3.5-2b_fp16_rk3588.rkllm&quot; &quot;$Artifacts\qwen3.5_vision_rk3588.rknn&quot; &quot;$Artifacts\SHA256SUMS&quot; &quot;root@${env:BOARD_HOST}:/opt/qwen3.5-2b/models/&quot;
+scp -r &quot;$ReproRoot\scripts&quot; &quot;root@${env:BOARD_HOST}:/var/tmp/qwen35-repro/&quot;
+ssh &quot;root@$env:BOARD_HOST&quot; &quot;bash /var/tmp/qwen35-repro/scripts/install_board.sh&quot;</code></pre>
+<p>如果 WSL 发行版不是 Debian，修改传输路径中的发行版名称。安装脚本核验模型，停止已有实例，安装独立 Python、固定运行库及服务端，再按源码 SHA 校验并应用本地改动。它检查现有全局运行库链接，遇到其他部署的库会停止；应先确认归属再调整，不能盲目覆盖共享库。</p>
+<p>首次加载或存储繁忙时初始化可能持续数分钟；以 <code>/health</code> 正常响应和日志的 <code>Application startup complete</code> 为就绪依据，systemd 的 active 不能单独代表模型已加载成功。安装脚本启动服务，验收后再启用开机启动：</p><pre><code class="bash">systemctl show qwen3.5-2b.service -p User -p DynamicUser -p NRestarts -p MemoryCurrent -p MemoryPeak
+ps -p &quot;$(systemctl show qwen3.5-2b.service -p MainPID --value)&quot; -o pid,uid,comm
+curl --fail --unix-socket /run/qwen3.5-2b/inference.sock http://localhost/health
+# 完成下面的功能验收后执行：
+systemctl enable qwen3.5-2b.service qwen3.5-2b-socket.socket</code></pre>
+<p>确认 DynamicUser=yes、UID 非 0、进程名正确、NRestarts 没有异常增加。实际已部署实例已完成验证并启用自启动。</p></section><section id="api"><h2>5. 本地问答、中断与清缓存</h2>
+<p>接口是 Unix Socket 上的 HTTP，兼容常用的 OpenAI Chat Completions 请求格式，不是 gRPC。无需开启外部监听。Socket 为 root 可访问的 0600，服务自身以动态用户运行；调用者权限与模型进程权限是两件事。</p>
+<h3>文本问答</h3><pre><code class="bash">curl --fail-with-body --unix-socket /run/qwen3.5-2b/inference.sock   http://localhost/v1/chat/completions   -H &#x27;Content-Type: application/json&#x27;   -d &#x27;{&quot;model&quot;:&quot;Qwen3.5-2B&quot;,&quot;messages&quot;:[{&quot;role&quot;:&quot;user&quot;,&quot;content&quot;:&quot;请简要介绍太阳系。&quot;}],&quot;enable_thinking&quot;:false,&quot;max_tokens&quot;:128,&quot;stream&quot;:false}&#x27;</code></pre>
+<p>流式输出把 <code>stream</code> 改为 true，并给 curl 添加 <code>-N</code>。建议每次显式传入 <code>max_tokens</code> 和 <code>enable_thinking:false</code>。上游的 token 用量是估算值，而且含思考预算扩展逻辑；不能把该接口当作完整的 OpenAI 服务实现。</p>
+<h3>图片问答</h3><p>在目标板保存自己的测试图片，以下生成 data URL 请求并通过 Socket 调用：</p><pre><code class="bash">python3 - &lt;&lt;&#x27;PY&#x27; &gt; /var/tmp/qwen35-image-request.json
+import base64, json
+from pathlib import Path
+image = Path(&#x27;/path/to/image.jpg&#x27;)
+print(json.dumps({&quot;model&quot;:&quot;Qwen3.5-2B&quot;,&quot;messages&quot;:[{&quot;role&quot;:&quot;user&quot;,&quot;content&quot;:[
+    {&quot;type&quot;:&quot;text&quot;,&quot;text&quot;:&quot;请描述这张图片。&quot;},
+    {&quot;type&quot;:&quot;image_url&quot;,&quot;image_url&quot;:{&quot;url&quot;:&quot;data:image/jpeg;base64,&quot;+base64.b64encode(image.read_bytes()).decode()}}
+]}],&quot;enable_thinking&quot;:False,&quot;max_tokens&quot;:128}, ensure_ascii=False))
+PY
+curl --fail-with-body --unix-socket /run/qwen3.5-2b/inference.sock   http://localhost/v1/chat/completions -H &#x27;Content-Type: application/json&#x27;   --data-binary @/var/tmp/qwen35-image-request.json
+rm -f /var/tmp/qwen35-image-request.json</code></pre>
+<h3>中断与清缓存</h3><pre><code class="bash"># 在另一个终端中断当前推理：
+curl --fail-with-body --unix-socket /run/qwen3.5-2b/inference.sock   -X POST http://localhost/v1/abort
+# 等待 active_requests=0，last_cleared_kv_positions=0：
+curl --fail --unix-socket /run/qwen3.5-2b/inference.sock http://localhost/health
+# 空闲时可显式清 KV，通常无需调用，因为每次请求结束已自动清理：
+curl --fail-with-body --unix-socket /run/qwen3.5-2b/inference.sock   -X POST http://localhost/v1/cache/clear</code></pre>
+<p><code>/v1/abort</code> 通过官方 <code>rkllm_abort</code> 中断当前请求；若返回 cancelling，应继续等待健康接口空闲。输入图像预处理期间会标记取消并跳过后续语言推理，不承诺能立即打断底层图像编码调用。清缓存在忙碌时返回 HTTP 409，避免修改正在使用的状态。</p>
+<p>本地新增逻辑保证工作线程停止、KV 清理后才释放推理并发名额。SSE 客户端断开也触发取消；非流式客户端需要停止任务时应显式调用中断接口。清缓存不删除客户端保存的 messages、不卸载模型，也不承诺擦除运行时分配内存的物理字节。</p></section><section id="verify"><h2>6. 实测依据、计算代码与结果</h2>
+<p>条件：RK3588S、8GB、FP16、服务上下文 2048、三 NPU 核心、单并发，样例显式关闭思考，单请求输出参数 128。数值是一次功能验收的观测，不代表所有输入、长对话、长期运行或其他板卡。没有用官方量化 benchmark 替代实测。</p>
+<h3>先运行计算代码</h3><p>在复现资料根目录执行 <code>python scripts/summarize_evidence.py</code>。代码读取随附的原始测量摘要，明确区分模型文件和运行内存：</p><pre><code class="python">&quot;&quot;&quot;Print raw measurements, unit conversions, and observed request times.&quot;&quot;&quot;
+import json
+from pathlib import Path
+
+root = Path(__file__).resolve().parents[1] / &#x27;evidence&#x27;
+api = json.loads((root / &#x27;api-verification-summary.json&#x27;).read_text())
+final = json.loads((root / &#x27;final-environment.json&#x27;).read_text())
+management = json.loads((root / &#x27;management-verification.json&#x27;).read_text())
+source_weight_bytes = 4548144832
+print(&#x27;Raw source tensor bytes:&#x27;, source_weight_bytes)
+print(&#x27;Raw service peak bytes:&#x27;, final[&#x27;service_memory_peak_bytes&#x27;])
+print(&#x27;Raw minimum MemAvailable KiB:&#x27;, api[&#x27;minimum_mem_available_kib&#x27;])
+print(&#x27;Raw service swap bytes:&#x27;, final[&#x27;service_swap_current_bytes&#x27;])
+print(f&#x27;Source tensor data: {source_weight_bytes / 10**9:.4f} GB / {source_weight_bytes / 2**30:.4f} GiB&#x27;)
+print(f&#x27;Service cgroup peak: {final[&quot;service_memory_peak_bytes&quot;] / 2**30:.3f} GiB&#x27;)
+print(f&#x27;Minimum system MemAvailable: {api[&quot;minimum_mem_available_kib&quot;] / 2**20:.3f} GiB&#x27;)
+print(f&#x27;Service swap at final sample: {final[&quot;service_swap_current_bytes&quot;] / 2**20:.3f} MiB&#x27;)
+print(&#x27;Observed maximum NPU core loads (%):&#x27;, api[&#x27;observed_max_npu_core_load_percent&#x27;])
+for test in api[&#x27;tests&#x27;]:
+    print(f&#x27;{test[&quot;test&quot;]}: {test[&quot;seconds&quot;]:.3f} s; {test[&quot;answer&quot;]}&#x27;)
+print(f&#x27;Abort to stream close: {management[&quot;abort&quot;][&quot;seconds_until_stream_closed&quot;]:.3f} s&#x27;)
+print(&#x27;OOM kills:&#x27;, final[&#x27;memory_events&#x27;][&#x27;oom_kill&#x27;])
+print(&#x27;Automatic restarts:&#x27;, final[&#x27;systemd&#x27;][&#x27;NRestarts&#x27;])</code></pre>
+<h3>完整输出与中间量</h3><pre><code class="">Raw source tensor bytes: 4548144832
+Raw service peak bytes: 6088077312
+Raw minimum MemAvailable KiB: 1331856
+Raw service swap bytes: 4096
+Source tensor data: 4.5481 GB / 4.2358 GiB
+Service cgroup peak: 5.670 GiB
+Minimum system MemAvailable: 1.270 GiB
+Service swap at final sample: 0.004 MiB
+Observed maximum NPU core loads (%): [98, 52, 52]
+text: 8.547 s; 太阳系是由太阳以及围绕其公转的八大行星、矮行星、小行星和彗星等天体组成的引力束缚系统。
+image_a: 19.014 s; 一名宇航员在月球上惬意地喝着啤酒，脚搭在绿色箱子上，背景是地球和星空。
+image_b: 12.568 s; 水牛
+image_a_again: 14.120 s; 一瓶啤酒
+Abort to stream close: 0.249 s
+OOM kills: 0
+Automatic restarts: 0</code></pre>
+<h3>功能结果</h3><table><thead><tr><th>测试</th><th>整请求耗时 / 秒</th><th>回答</th></tr></thead><tbody><tr><td>text</td><td>8.547</td><td>太阳系是由太阳以及围绕其公转的八大行星、矮行星、小行星和彗星等天体组成的引力束缚系统。</td></tr><tr><td>image_a</td><td>19.014</td><td>一名宇航员在月球上惬意地喝着啤酒，脚搭在绿色箱子上，背景是地球和星空。</td></tr><tr><td>image_b</td><td>12.568</td><td>水牛</td></tr><tr><td>image_a_again</td><td>14.120</td><td>一瓶啤酒</td></tr>
+</tbody></table><p>三个 NPU 核心都观测到活动。中断后继续文本问答成功；正常完成、中断、SSE 断开与无效图片错误后的健康检查均显示 KV 位置数 0。服务未自动重启，cgroup 未出现 OOM kill；既有路由服务仍为 active。</p>
+<p>因此，8GB 板上本次未量化 FP16 图文问答可运行。不能用原始权重文件大小当作所需 RAM，也不能把清 KV 理解成释放全部模型内存。服务占用较大，应保持单实例及当前内存限制。本次没有测出最小内存要求，未进行新模型 ONNX 与 NPU 输出的数值一致性比较或长期压力测试。</p>
+<p>视觉编译曾出现 REGTASK 等日志，产物构建成功并通过上述实际图文调用；不能据此宣称同类日志总是无害。换工具版本、图像尺寸或编译配置后应重新验证。</p>
+<details><summary>原始 API 测量摘要</summary><pre><code class="json">{
+  &quot;checked_at_utc&quot;: &quot;2026-11-04T09:38:34.544691+00:00&quot;,
+  &quot;tests&quot;: [
+    {
+      &quot;test&quot;: &quot;text&quot;,
+      &quot;seconds&quot;: 8.546910629000195,
+      &quot;answer&quot;: &quot;太阳系是由太阳以及围绕其公转的八大行星、矮行星、小行星和彗星等天体组成的引力束缚系统。&quot;
+    },
+    {
+      &quot;test&quot;: &quot;image_a&quot;,
+      &quot;seconds&quot;: 19.014307729999928,
+      &quot;answer&quot;: &quot;一名宇航员在月球上惬意地喝着啤酒，脚搭在绿色箱子上，背景是地球和星空。&quot;
+    },
+    {
+      &quot;test&quot;: &quot;image_b&quot;,
+      &quot;seconds&quot;: 12.56788143599988,
+      &quot;answer&quot;: &quot;水牛&quot;
+    },
+    {
+      &quot;test&quot;: &quot;image_a_again&quot;,
+      &quot;seconds&quot;: 14.119573979000052,
+      &quot;answer&quot;: &quot;一瓶啤酒&quot;
+    }
+  ],
+  &quot;observed_max_npu_core_load_percent&quot;: [
+    98,
+    52,
+    52
+  ],
+  &quot;minimum_mem_available_kib&quot;: 1331856,
+  &quot;minimum_swap_free_kib&quot;: 3611724,
+  &quot;service_cgroup_peak_memory_bytes&quot;: 6088077312
+}</code></pre></details>
+<details><summary>中断与缓存验证原始记录</summary><pre><code class="json">{
+  &quot;checked_at_utc&quot;: &quot;2026-11-04T09:36:04.916091+00:00&quot;,
+  &quot;abort&quot;: {
+    &quot;response&quot;: {
+      &quot;status&quot;: &quot;abort_requested&quot;,
+      &quot;requests&quot;: [
+        {
+          &quot;request_id&quot;: &quot;chatcmpl-21f52aef32904608bd64ee69&quot;,
+          &quot;abort_code&quot;: 0,
+          &quot;status&quot;: &quot;cancelled&quot;
+        }
+      ]
+    },
+    &quot;seconds_until_stream_closed&quot;: 0.24917672099945776,
+    &quot;first_chunk&quot;: {
+      &quot;id&quot;: &quot;chatcmpl-21f52aef32904608bd64ee69&quot;,
+      &quot;created&quot;: 1793784964,
+      &quot;model&quot;: &quot;Qwen3.5-2B&quot;,
+      &quot;choices&quot;: [
+        {
+          &quot;index&quot;: 0,
+          &quot;delta&quot;: {
+            &quot;content&quot;: &quot;1&quot;
+          },
+          &quot;finish_reason&quot;: null
+        }
+      ]
+    },
+    &quot;busy_clear&quot;: {
+      &quot;detail&quot;: &quot;Inference busy; abort and wait for idle first&quot;
+    },
+    &quot;idle_after_abort&quot;: {
+      &quot;status&quot;: &quot;healthy&quot;,
+      &quot;runtime&quot;: &quot;official&quot;,
+      &quot;active_requests&quot;: 0,
+      &quot;max_concurrent&quot;: 1,
+      &quot;timestamp&quot;: 1793784967,
+      &quot;conversation_history&quot;: &quot;client_managed&quot;,
+      &quot;kv_policy&quot;: &quot;clear_before_and_after_each_request&quot;,
+      &quot;last_cleared_kv_positions&quot;: 0
+    }
+  },
+  &quot;explicit_clear&quot;: {
+    &quot;status&quot;: &quot;cleared&quot;,
+    &quot;kv_positions&quot;: 0
+  },
+  &quot;question_after_abort&quot;: {
+    &quot;id&quot;: &quot;chatcmpl-73f81aebf6354e169f23774e&quot;,
+    &quot;object&quot;: &quot;chat.completion&quot;,
+    &quot;created&quot;: 1793784967,
+    &quot;model&quot;: &quot;Qwen3.5-2B&quot;,
+    &quot;choices&quot;: [
+      {
+        &quot;index&quot;: 0,
+        &quot;message&quot;: {
+          &quot;role&quot;: &quot;assistant&quot;,
+          &quot;content&quot;: &quot;巴黎（Paris）。&quot;
+        },
+        &quot;finish_reason&quot;: &quot;stop&quot;
+      }
+    ],
+    &quot;usage&quot;: {
+      &quot;prompt_tokens&quot;: 25,
+      &quot;completion_tokens&quot;: 5,
+      &quot;total_tokens&quot;: 30
+    },
+    &quot;system_fingerprint&quot;: &quot;fp_rkllm_vision&quot;
+  },
+  &quot;idle_after_success&quot;: {
+    &quot;status&quot;: &quot;healthy&quot;,
+    &quot;runtime&quot;: &quot;official&quot;,
+    &quot;active_requests&quot;: 0,
+    &quot;max_concurrent&quot;: 1,
+    &quot;timestamp&quot;: 1793784970,
+    &quot;conversation_history&quot;: &quot;client_managed&quot;,
+    &quot;kv_policy&quot;: &quot;clear_before_and_after_each_request&quot;,
+    &quot;last_cleared_kv_positions&quot;: 0
+  },
+  &quot;idle_after_disconnect&quot;: {
+    &quot;status&quot;: &quot;healthy&quot;,
+    &quot;runtime&quot;: &quot;official&quot;,
+    &quot;active_requests&quot;: 0,
+    &quot;max_concurrent&quot;: 1,
+    &quot;timestamp&quot;: 1793784972,
+    &quot;conversation_history&quot;: &quot;client_managed&quot;,
+    &quot;kv_policy&quot;: &quot;clear_before_and_after_each_request&quot;,
+    &quot;last_cleared_kv_positions&quot;: 0
+  },
+  &quot;invalid_image&quot;: {
+    &quot;status&quot;: 500,
+    &quot;response&quot;: {
+      &quot;detail&quot;: &quot;cannot identify image file &lt;_io.BytesIO object at &lt;memory-address&gt;&gt;&quot;
+    },
+    &quot;idle&quot;: {
+      &quot;status&quot;: &quot;healthy&quot;,
+      &quot;runtime&quot;: &quot;official&quot;,
+      &quot;active_requests&quot;: 0,
+      &quot;max_concurrent&quot;: 1,
+      &quot;timestamp&quot;: 1793784973,
+      &quot;conversation_history&quot;: &quot;client_managed&quot;,
+      &quot;kv_policy&quot;: &quot;clear_before_and_after_each_request&quot;,
+      &quot;last_cleared_kv_positions&quot;: 0
+    }
+  },
+  &quot;idle_abort&quot;: {
+    &quot;status&quot;: &quot;idle&quot;,
+    &quot;requests&quot;: []
+  }
+}</code></pre></details>
+<details><summary>最终环境记录</summary><pre><code class="json">{
+  &quot;checked_at_utc&quot;: &quot;2026-11-04T09:43:17.463970+00:00&quot;,
+  &quot;kernel&quot;: &quot;6.1.115-vendor-rk35xx&quot;,
+  &quot;driver&quot;: &quot;RKNPU driver: v0.9.8&quot;,
+  &quot;systemd&quot;: {
+    &quot;NRestarts&quot;: &quot;0&quot;,
+    &quot;User&quot;: &quot;qwen35&quot;,
+    &quot;DynamicUser&quot;: &quot;yes&quot;
+  },
+  &quot;backend_uid_is_nonroot&quot;: true,
+  &quot;process_comm&quot;: &quot;qwen3.5-2b&quot;,
+  &quot;service_enabled&quot;: &quot;enabled&quot;,
+  &quot;socket_enabled&quot;: &quot;enabled&quot;,
+  &quot;service_memory_peak_bytes&quot;: 6088077312,
+  &quot;service_memory_current_bytes&quot;: 5998555136,
+  &quot;service_swap_current_bytes&quot;: 4096,
+  &quot;memory_events&quot;: {
+    &quot;low&quot;: 0,
+    &quot;high&quot;: 0,
+    &quot;max&quot;: 0,
+    &quot;oom&quot;: 0,
+    &quot;oom_kill&quot;: 0,
+    &quot;oom_group_kill&quot;: 0
+  },
+  &quot;mem_total_kib&quot;: 8119968,
+  &quot;mem_available_kib&quot;: 1341924,
+  &quot;old_model_directory_removed&quot;: true,
+  &quot;router_services_active&quot;: true,
+  &quot;tcp_listeners&quot;: &quot;LISTEN 0      2048   127.0.0.1:18080 0.0.0.0:*&quot;,
+  &quot;socket_mode&quot;: &quot;0o600&quot;
+}</code></pre></details>
+<h3>在复现机器重新验收</h3><p>可使用自己的图片调用上述接口；脚本验收需要先自行取得有权使用的样例。原测试的 A 图来自 Rockchip 示例 demo.jpg，B 图来自示例数据集 21.jpg；图片不随资料分发：</p><pre><code class="bash"># 在目标板执行；依赖图片保持从上游直接获取，不提交到仓库。
+base=https://raw.githubusercontent.com/airockchip/rknn-llm/f7390530443bf84f0394255a449d7cbe81e69d1c/examples/multimodal_model_demo/data
+curl -fLsS &quot;$base/demo.jpg&quot; -o /opt/qwen3.5-2b/samples/demo.jpg
+curl -fLsS &quot;$base/datasets/21.jpg&quot; -o /opt/qwen3.5-2b/samples/buffalo.jpg
+/opt/qwen3.5-2b/api-venv/bin/python /opt/qwen3.5-2b/bin/verify_api.py
+/opt/qwen3.5-2b/api-venv/bin/python /opt/qwen3.5-2b/bin/verify_management.py</code></pre>
+<p>API 脚本验证 HTTP 成功、非空回答、KV 清零并记录 NPU/内存；图像回答是否符合内容仍需人工核对。脚本写入的最新测量可留在目标板 evidence 目录，公开前再次检查。</p></section><section id="maintain"><h2>7. 日常维护与排错</h2><pre><code class="bash">systemctl status qwen3.5-2b.service --no-pager
+journalctl -u qwen3.5-2b.service --no-pager -n 80
+cat /sys/kernel/debug/rknpu/load
+cat /sys/fs/cgroup/system.slice/qwen3.5-2b.service/memory.events
+ss -lntH &#x27;sport = :18080&#x27;
+
+# 完全停止并释放模型，先停入口，避免再次被调用拉起：
+systemctl stop qwen3.5-2b-socket.socket qwen3.5-2b-socket.service qwen3.5-2b.service
+# 恢复：
+systemctl start qwen3.5-2b.service qwen3.5-2b-socket.socket</code></pre>
+<table><thead><tr><th>现象</th><th>检查与处理</th></tr></thead><tbody>
+<tr><td>启动期间连接被拒绝或代理重置连接</td><td>检查初始化日志，等待 ready；不能只看 systemd active。</td></tr>
+<tr><td>设备权限错误</td><td>核对驱动、DRM 节点组，以及 SupplementaryGroups=render video。</td></tr>
+<tr><td>HTTP 429</td><td>已有推理占用唯一名额，等待或中断，不并行启动第二模型进程。</td></tr>
+<tr><td>清缓存返回 409</td><td>先中断，并等 active_requests=0，再清理。</td></tr>
+<tr><td>内存持续不足或 OOM</td><td>检查其他进程、swap 和 memory.events；停止服务后排查，不盲目增加上下文或缓存。</td></tr>
+<tr><td>模型输出异常</td><td>核对模型、工具和运行库版本；重新做图像切换和文本测试，不能只测 /health。</td></tr>
+</tbody></table>
+<p>升级时先停止入口、代理和主服务，替换配套模型/库并校验，再启动验收。原系统引导/内核恢复文件不属于模型数据，应单独保留；本次替换旧部署时已把相关恢复资料保留在独立备份位置。教程不包含具体设备的启动备份。</p></section><section id="files"><h2>8. 固定版本与完整可复现配置</h2><table><thead><tr><th>组件</th><th>版本</th><th>固定提交</th></tr></thead><tbody><tr><td>模型</td><td>Qwen/Qwen3.5-2B</td><td>15852e8c16360a2fea060d615a32b45270f8a8fc</td></tr><tr><td>语言工具链</td><td>RKLLM 1.3.1</td><td>f7390530443bf84f0394255a449d7cbe81e69d1c</td></tr><tr><td>视觉工具链/运行库</td><td>RKNN 2.5.0</td><td>2c723177a94fac65cbc036d722907ddbc91980cf</td></tr><tr><td>第三方 VLM 服务</td><td>Hanzo-Huang/rkllm-docker</td><td>ad016395d68e4fa789e139567b92c2320ba02249</td></tr><tr><td>Python / uv</td><td>3.12.16 / 0.13.7</td><td>见下载脚本与校验值</td></tr></tbody></table>
+<p>以下内容全部嵌入本文，离线阅读不依赖旁边的文件。scripts 目录是便于执行的同内容副本。安装脚本需要联网从各上游取得依赖，本文自身无需联网加载样式、字体、图片或脚本。</p><details><summary>api-requirements.freeze.txt</summary><pre><code class="">annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.16.0
+certifi==2026.10.23
+charset-normalizer==3.5.2
+click==8.5.0
+fastapi==0.162.0
+h11==0.16.0
+idna==3.20
+numpy==1.26.4
+opentelemetry-api==1.45.2
+pillow==13.0.0
+pydantic==2.14.2
+pydantic-core==2.50.2
+requests==2.34.2
+scipy==1.17.1
+starlette==1.10.0
+typing-extensions==4.16.0
+typing-inspection==0.4.4
+urllib3==2.8.0
+uvicorn==0.54.0</code></pre></details><details><summary>apply_local_changes.py</summary><pre><code class="">&quot;&quot;&quot;Apply local stateless/management changes to the exact upstream version.
+
+This file contains only local additions and edit coordinates. It does not
+include or license the upstream server. Obtain it from its original author.
+&quot;&quot;&quot;
+import hashlib
+import sys
+from pathlib import Path
+
+SOURCE_SHA256 = &quot;df046479b373c59a194f21632585b3b6e4f1789e02db82199e743326553dc255&quot;
+RESULT_SHA256 = &#x27;ef1e519fad3608d57415aefcb0f28914f5d3a08c1863a06945ad5db2e5ba84a2&#x27;
+EDITS = [(881, 881, &#x27;        self.cancel_requested = threading.Event()\n&#x27;), (928, 928, &#x27;        self.control_lock = threading.Lock()\n        self.active_request_id = None\n        self.last_cache_positions = None\n&#x27;), (1009, 1009, &#x27;        self.lib.rkllm_abort.argtypes = [ctypes.c_void_p]\n        self.lib.rkllm_abort.restype = ctypes.c_int\n        self.lib.rkllm_is_running.argtypes = [ctypes.c_void_p]\n        self.lib.rkllm_is_running.restype = ctypes.c_int\n        self.lib.rkllm_get_kv_cache_size.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_int)]\n        self.lib.rkllm_get_kv_cache_size.restype = ctypes.c_int\n&#x27;), (1024, 1025, &#x27;&#x27;), (1027, 1028, &#x27;&#x27;), (1112, 1115, &#x27;            try:\n                self.clear_cache()\n                if not state.cancel_requested.is_set():\n                    with self.control_lock:\n                        self.active_request_id = request_id\n                    ret = self.lib.rkllm_run(\n                        self.handle,\n                        ctypes.byref(input_data),\n                        ctypes.byref(infer_params),\n                        ctypes.cast(request_id_buffer, ctypes.c_void_p),\n                    )\n                    if state.cancel_requested.is_set():\n                        state.error = None\n                        state.finish_reason = &quot;stop&quot;\n                    elif ret != 0 and not state.error:\n                        state.error = f&quot;rkllm_run failed with code {ret}&quot;\n            finally:\n                with self.control_lock:\n                    self.active_request_id = None\n                # Clear after success, native error, or cancellation, before\n                # advertising completion or releasing the inference slot.\n                try:\n                    self.clear_cache()\n                except Exception as error:\n                    state.error = str(error)\n&#x27;), (1116, 1126, &#x27;&#x27;), (1127, 1127, &#x27;\n    def clear_cache(self) -&gt; int:\n        ret = self.lib.rkllm_clear_kv_cache(self.handle, 0, None, None)\n        if ret != 0:\n            raise RuntimeError(f&quot;rkllm_clear_kv_cache failed with code {ret}&quot;)\n        positions = ctypes.c_int(-1)  # This deployment uses one batch.\n        ret = self.lib.rkllm_get_kv_cache_size(self.handle, ctypes.byref(positions))\n        if ret != 0 or positions.value != 0:\n            raise RuntimeError(f&quot;KV cache verification failed: ret={ret}, positions={positions.value}&quot;)\n        self.last_cache_positions = positions.value\n        return positions.value\n\n    def cancel(self, request_id: str, state: InferenceState) -&gt; dict:\n        state.cancel_requested.set()\n        deadline = time.monotonic() + 10\n        abort_code = None\n        while not state.completed.is_set() and time.monotonic() &lt; deadline:\n            with self.control_lock:\n                if self.active_request_id == request_id:\n                    abort_code = self.lib.rkllm_abort(self.handle)\n                    if abort_code != 0:\n                        raise RuntimeError(f&quot;rkllm_abort failed with code {abort_code}&quot;)\n            # Also cover cancellation in the small interval between assigning\n            # the active request and entering the native rkllm_run call.\n            state.completed.wait(0.01)\n        return {&quot;request_id&quot;: request_id, &quot;abort_code&quot;: abort_code,\n                &quot;status&quot;: &quot;cancelled&quot; if state.completed.is_set() else &quot;cancelling&quot;}\n&#x27;), (1371, 1371, &#x27;def finish_request(request_id: str, future) -&gt; None:\n    &quot;&quot;&quot;Keep the slot and callback state alive until the worker has stopped.&quot;&quot;&quot;\n    state = request_states.get(request_id)\n    if state and not state.completed.is_set():\n        state.cancel_requested.set()\n        executor.submit(runtime.llm.cancel, request_id, state)\n\n    def cleanup(_):\n        request_states.pop(request_id, None)\n        release_request_slot()\n\n    future.add_done_callback(cleanup)\n\n\n&#x27;), (1404, 1404, &#x27;    future = None\n&#x27;), (1414, 1415, &#x27;        future = executor.submit(\n&#x27;), (1478, 1480, &#x27;        if future is not None:\n            finish_request(request_id, future)\n        else:\n            request_states.pop(request_id, None)\n            release_request_slot()\n&#x27;), (1523, 1523, &#x27;        for request_id, state in list(request_states.items()):\n            await asyncio.to_thread(runtime.llm.cancel, request_id, state)\n        if executor:\n            await asyncio.to_thread(executor.shutdown, wait=True)\n&#x27;), (1524, 1526, &#x27;&#x27;), (1578, 1578, &#x27;        &quot;conversation_history&quot;: &quot;client_managed&quot;,\n        &quot;kv_policy&quot;: &quot;clear_before_and_after_each_request&quot;,\n        &quot;last_cleared_kv_positions&quot;: runtime.llm.last_cache_positions if runtime else None,\n&#x27;), (1579, 1579, &#x27;\n\n@app.post(&quot;/v1/abort&quot;)\nasync def abort_generation():\n    if runtime is None:\n        raise HTTPException(status_code=503, detail=&quot;VLM runtime is not initialized&quot;)\n    targets = [(key, value) for key, value in list(request_states.items())\n               if not value.completed.is_set()]\n    for _, state in targets:\n        state.cancel_requested.set()\n    results = [await asyncio.to_thread(runtime.llm.cancel, key, state)\n               for key, state in targets]\n    return {&quot;status&quot;: &quot;idle&quot; if not results else &quot;abort_requested&quot;, &quot;requests&quot;: results}\n\n\n@app.post(&quot;/v1/cache/clear&quot;)\nasync def clear_conversation_cache():\n    if runtime is None:\n        raise HTTPException(status_code=503, detail=&quot;VLM runtime is not initialized&quot;)\n    if active_requests or not runtime.llm.lock.acquire(blocking=False):\n        raise HTTPException(status_code=409, detail=&quot;Inference busy; abort and wait for idle first&quot;)\n    try:\n        return {&quot;status&quot;: &quot;cleared&quot;, &quot;kv_positions&quot;: runtime.llm.clear_cache()}\n    finally:\n        runtime.llm.lock.release()\n&#x27;), (1649, 1652, &#x27;    future = executor.submit(\n&#x27;), (1669, 1670, &#x27;    )\n    try:\n        state = await asyncio.shield(asyncio.wrap_future(future))\n&#x27;), (1704, 1706, &#x27;        finish_request(request_id, future)\n&#x27;)]
+
+def apply(path):
+    data = path.read_bytes()
+    digest = hashlib.sha256(data).hexdigest()
+    if digest == RESULT_SHA256:
+        print(&#x27;Local changes already applied&#x27;)
+        return
+    if digest != SOURCE_SHA256:
+        raise SystemExit(&#x27;Unexpected upstream version; refusing to change it&#x27;)
+    lines = data.decode(&#x27;utf-8&#x27;).splitlines(keepends=True)
+    for start, stop, addition in reversed(EDITS):
+        lines[start:stop] = [addition]
+    result = &#x27;&#x27;.join(lines).encode(&#x27;utf-8&#x27;)
+    assert hashlib.sha256(result).hexdigest() == RESULT_SHA256
+    compile(result, str(path), &#x27;exec&#x27;)
+    path.write_bytes(result)
+    print(&#x27;Applied stateless lifecycle and management APIs:&#x27;, RESULT_SHA256)
+
+if __name__ == &#x27;__main__&#x27;:
+    apply(Path(sys.argv[1]))</code></pre></details><details><summary>convert_fp16.py</summary><pre><code class="">import os
+import hashlib
+import json
+from pathlib import Path
+from rkllm.api import RKLLM
+
+root = Path(os.environ.get(&#x27;BUILD_DIR&#x27;, &#x27;/var/tmp/qwen3.5-2b-build&#x27;))
+model = root / &#x27;models/Qwen3.5-2B&#x27;
+assert (model / &#x27;SOURCE_SHA256SUMS&#x27;).is_file(), &#x27;Official checkpoint download/verification is not complete&#x27;
+target = root / &#x27;outputs/qwen3.5-2b_fp16_rk3588.rkllm&#x27;
+llm = RKLLM()
+ret = llm.load_huggingface(model=str(model), device=&#x27;cpu&#x27;)
+assert ret == 0, f&#x27;load_huggingface returned {ret}&#x27;
+print(&#x27;Building without quantization: do_quantization=False, target=rk3588, cores=3, max_context=4096&#x27;, flush=True)
+ret = llm.build(do_quantization=False, optimization_level=0, target_platform=&#x27;rk3588&#x27;, num_npu_core=3, max_context=4096)
+print(&#x27;Unquantized build return code:&#x27;, ret, flush=True)
+assert ret == 0, f&#x27;Unquantized build returned {ret}&#x27;
+ret = llm.export_rkllm(str(target))
+assert ret == 0, f&#x27;export_rkllm returned {ret}&#x27;
+with target.open(&#x27;rb&#x27;) as stream:
+    digest = hashlib.file_digest(stream, &#x27;sha256&#x27;).hexdigest()
+record = {&#x27;source_repo&#x27;: &#x27;Qwen/Qwen3.5-2B&#x27;, &#x27;source_revision&#x27;: &#x27;15852e8c16360a2fea060d615a32b45270f8a8fc&#x27;,
+          &#x27;toolkit&#x27;: &#x27;1.3.1&#x27;, &#x27;do_quantization&#x27;: False, &#x27;optimization_level&#x27;: 0,
+          &#x27;target_platform&#x27;: &#x27;rk3588&#x27;, &#x27;num_npu_core&#x27;: 3, &#x27;max_context&#x27;: 4096,
+          &#x27;output_file&#x27;: target.name, &#x27;output_bytes&#x27;: target.stat().st_size, &#x27;sha256&#x27;: digest}
+(root / &#x27;outputs/qwen35-conversion.json&#x27;).write_text(json.dumps(record, indent=2))
+print(json.dumps(record, indent=2), flush=True)</code></pre></details><details><summary>convert_wsl.sh</summary><pre><code class="">#!/usr/bin/env bash
+set -euo pipefail
+SCRIPT_DIR=$(cd -- &quot;$(dirname -- &quot;${BASH_SOURCE[0]}&quot;)&quot; &amp;&amp; pwd)
+export BUILD_DIR=${BUILD_DIR:-/var/tmp/qwen3.5-2b-build}
+mkdir -p &quot;$BUILD_DIR&quot;/{tools,models,outputs,logs,cache}
+cd &quot;$BUILD_DIR&quot;
+export UV_CACHE_DIR=&quot;$BUILD_DIR/cache/uv&quot;
+export UV_PYTHON_INSTALL_DIR=&quot;$BUILD_DIR/python&quot;
+export UV_PYTHON_BIN_DIR=&quot;$BUILD_DIR/tools&quot;
+export UV_HTTP_TIMEOUT=180 BUILD_CUDA_EXT=0 CUDA_VISIBLE_DEVICES=&#x27;&#x27;
+export OMP_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 PYTHONUNBUFFERED=1
+curl -fLsS --retry 4 -o tools/uv.tar.gz https://github.com/astral-sh/uv/releases/download/0.13.7/uv-x86_64-unknown-linux-gnu.tar.gz
+printf &#x27;%s\n&#x27; &#x27;c5221ff41b7892bfc223543883600125f6a47fe845093e0f5bdff4f359196d83  tools/uv.tar.gz&#x27; | sha256sum -c -
+tar -xzf tools/uv.tar.gz -C tools
+UV=&quot;$BUILD_DIR/tools/uv-x86_64-unknown-linux-gnu/uv&quot;
+&quot;$UV&quot; python install 3.12.16
+for name in llm-venv vision-venv; do
+  test -x &quot;$BUILD_DIR/$name/bin/python&quot; || &quot;$UV&quot; venv --python 3.12.16 &quot;$BUILD_DIR/$name&quot;
+done
+if ! test -d sdk/.git; then
+  git clone --depth 1 --filter=blob:none --sparse --branch release-v1.3.1 https://github.com/airockchip/rknn-llm.git sdk
+fi
+test &quot;$(git -C sdk rev-parse HEAD)&quot; = f7390530443bf84f0394255a449d7cbe81e69d1c
+git -C sdk sparse-checkout set --no-cone &#x27;/examples/multimodal_model_demo/export/&#x27; &#x27;/rkllm-toolkit/packages/rkllm_toolkit-1.3.1-cp312-cp312-linux_x86_64.whl&#x27;
+&quot;$UV&quot; pip install --python llm-venv/bin/python torch==2.6.0+cpu torchvision==0.21.0+cpu --index-url https://download.pytorch.org/whl/cpu
+&quot;$UV&quot; pip install --python llm-venv/bin/python -c &quot;$SCRIPT_DIR/llm-constraints.txt&quot; ./sdk/rkllm-toolkit/packages/rkllm_toolkit-1.3.1-cp312-cp312-linux_x86_64.whl onnx==1.18.0 transformers==5.8.0
+&quot;$UV&quot; pip install --python vision-venv/bin/python torch==2.4.0+cpu torchvision==0.19.0+cpu --index-url https://download.pytorch.org/whl/cpu
+&quot;$UV&quot; pip install --python vision-venv/bin/python -c &quot;$SCRIPT_DIR/vision-requirements.freeze.txt&quot; rknn-toolkit2==2.5.0 transformers==4.57.0 accelerate==1.5.2 onnx==1.18.0
+bash &quot;$SCRIPT_DIR/download_official.sh&quot;
+export HF_HOME=&quot;$BUILD_DIR/cache/huggingface&quot; HF_HUB_OFFLINE=1
+&quot;$BUILD_DIR/llm-venv/bin/python&quot; &quot;$SCRIPT_DIR/convert_fp16.py&quot; 2&gt;&amp;1 | tee logs/language-conversion.log
+cd &quot;$BUILD_DIR/sdk/examples/multimodal_model_demo&quot;
+&quot;$BUILD_DIR/llm-venv/bin/python&quot; export/export_vision.py --path &quot;$BUILD_DIR/models/Qwen3.5-2B&quot; --model_name qwen3.5 --height 448 --width 448 --device cpu 2&gt;&amp;1 | tee &quot;$BUILD_DIR/logs/vision-export.log&quot;
+&quot;$BUILD_DIR/vision-venv/bin/python&quot; export/export_vision_rknn.py --path ./onnx/qwen3.5_vision.onnx --model_name qwen3.5 --height 448 --width 448 --target-platform rk3588 2&gt;&amp;1 | tee &quot;$BUILD_DIR/logs/vision-conversion.log&quot;
+cp rknn/qwen3.5_vision_rk3588.rknn &quot;$BUILD_DIR/outputs/&quot;
+cd &quot;$BUILD_DIR/outputs&quot;
+sha256sum qwen3.5-2b_fp16_rk3588.rkllm qwen3.5_vision_rk3588.rknn &gt; SHA256SUMS
+cat SHA256SUMS</code></pre></details><details><summary>download_official.sh</summary><pre><code class="">#!/usr/bin/env bash
+set -eu
+build=${BUILD_DIR:-/var/tmp/qwen3.5-2b-build}
+model=&quot;$build/models/Qwen3.5-2B&quot;
+mkdir -p &quot;$model&quot;
+cd &quot;$model&quot;
+base=https://huggingface.co/Qwen/Qwen3.5-2B/resolve/15852e8c16360a2fea060d615a32b45270f8a8fc
+for name in config.json preprocessor_config.json video_preprocessor_config.json chat_template.jinja tokenizer.json tokenizer_config.json merges.txt vocab.json README.md LICENSE model.safetensors.index.json; do
+  curl --fail --silent --show-error --location --retry 4 --connect-timeout 20 --max-time 180 --output &quot;$name&quot; &quot;$base/$name&quot;
+  printf &#x27;Fetched official Qwen3.5 file: %s\n&#x27; &quot;$name&quot;
+done
+for attempt in $(seq 1 12); do
+  printf &#x27;Qwen3.5 checkpoint download attempt %s\n&#x27; &quot;$attempt&quot;
+  if curl --fail --silent --show-error --location --connect-timeout 20 --max-time 1200 --continue-at - --output model.safetensors-00001-of-00001.safetensors &quot;$base/model.safetensors-00001-of-00001.safetensors&quot;; then
+    printf &#x27;%s\n&#x27; &#x27;aa33250c4fc64891ddfaba3a314fd9542ea371843c387178b425fbcc5ed680b1  model.safetensors-00001-of-00001.safetensors&#x27; | sha256sum -c -
+    sha256sum *.json *.txt *.jinja *.safetensors &gt; SOURCE_SHA256SUMS
+    exit 0
+  fi
+  sleep 3
+done
+exit 1</code></pre></details><details><summary>install_board.sh</summary><pre><code class="">#!/usr/bin/env bash
+set -euo pipefail
+SCRIPT_DIR=$(cd -- &quot;$(dirname -- &quot;${BASH_SOURCE[0]}&quot;)&quot; &amp;&amp; pwd)
+DEPLOY_DIR=/opt/qwen3.5-2b
+test &quot;$(id -u)&quot; = 0
+test &quot;$(uname -m)&quot; = aarch64
+test -r /sys/kernel/debug/rknpu/version
+cat /sys/kernel/debug/rknpu/version
+test -f &quot;$DEPLOY_DIR/models/qwen3.5-2b_fp16_rk3588.rkllm&quot;
+test -f &quot;$DEPLOY_DIR/models/qwen3.5_vision_rk3588.rknn&quot;
+(cd &quot;$DEPLOY_DIR/models&quot;; sha256sum -c SHA256SUMS)
+# Stop a previous deployment before allocating the replacement model.
+for unit in qwen3-vl-socket.socket qwen3-vl-socket.service qwen3-vl.service; do
+  if systemctl cat &quot;$unit&quot; &gt;/dev/null 2&gt;&amp;1; then systemctl disable --now &quot;$unit&quot;; fi
+done
+systemctl stop qwen3.5-2b-socket.socket qwen3.5-2b-socket.service qwen3.5-2b.service 2&gt;/dev/null || true
+if ss -lntH &#x27;sport = :18080&#x27; | grep -q .; then
+  printf &#x27;Port 18080 is occupied; stop its service before continuing\n&#x27; &gt;&amp;2
+  exit 2
+fi
+export DEBIAN_FRONTEND=noninteractive
+apt-get --yes --no-install-recommends install curl ca-certificates libstdc++6 libgomp1
+mkdir -p &quot;$DEPLOY_DIR&quot;/{tools,python,cache,src/app,runtime/lib,evidence,bin,samples}
+cd &quot;$DEPLOY_DIR&quot;
+curl -fLsS --retry 4 -o tools/uv.tar.gz https://github.com/astral-sh/uv/releases/download/0.13.7/uv-aarch64-unknown-linux-gnu.tar.gz
+printf &#x27;%s\n&#x27; &#x27;71279f8d3c67241e807b9d8db872d1bf541579fb9f08b7d1eb1682196d1e57dc  tools/uv.tar.gz&#x27; | sha256sum -c -
+tar -xzf tools/uv.tar.gz -C tools
+export UV_CACHE_DIR=&quot;$DEPLOY_DIR/cache/uv&quot; UV_PYTHON_INSTALL_DIR=&quot;$DEPLOY_DIR/python&quot; UV_PYTHON_BIN_DIR=&quot;$DEPLOY_DIR/tools&quot;
+UV=&quot;$DEPLOY_DIR/tools/uv-aarch64-unknown-linux-gnu/uv&quot;
+&quot;$UV&quot; python install 3.12.16
+test -x api-venv/bin/python || &quot;$UV&quot; venv --python 3.12.16 api-venv
+&quot;$UV&quot; pip install --python api-venv/bin/python -r &quot;$SCRIPT_DIR/api-requirements.freeze.txt&quot;
+test -e api-venv/bin/qwen3.5-2b || ln -s python api-venv/bin/qwen3.5-2b
+server=src/app/fastapi_server_vlm.py
+curl -fLsS --retry 4 -o &quot;$server&quot; https://raw.githubusercontent.com/Hanzo-Huang/rkllm-docker/ad016395d68e4fa789e139567b92c2320ba02249/app/fastapi_server_vlm.py
+printf &#x27;%s\n&#x27; &quot;df046479b373c59a194f21632585b3b6e4f1789e02db82199e743326553dc255  $server&quot; | sha256sum -c -
+api-venv/bin/python &quot;$SCRIPT_DIR/apply_local_changes.py&quot; &quot;$server&quot;
+curl -fLsS --retry 4 -o runtime/lib/librkllmrt.so https://raw.githubusercontent.com/airockchip/rknn-llm/f7390530443bf84f0394255a449d7cbe81e69d1c/rkllm-runtime/Linux/librkllm_api/aarch64/librkllmrt.so
+curl -fLsS --retry 4 -o runtime/lib/librknnrt.so https://raw.githubusercontent.com/airockchip/rknn-toolkit2/2c723177a94fac65cbc036d722907ddbc91980cf/rknpu2/runtime/Linux/librknn_api/aarch64/librknnrt.so
+printf &#x27;%s\n&#x27; &#x27;f25e9b099db08aaacd0a3ac62b4697d3951d6ae61ae41ea09f6702cfa89eb32c  runtime/lib/librkllmrt.so&#x27; &#x27;4b6cc575bedf8952b13db4b1190fa3b3d2ac213f00be774ff6ccd19d651970c0  runtime/lib/librknnrt.so&#x27; | sha256sum -c -
+for library in librkllmrt.so librknnrt.so; do
+  target=&quot;$DEPLOY_DIR/runtime/lib/$library&quot;
+  if test -e &quot;/usr/lib/$library&quot; || test -L &quot;/usr/lib/$library&quot;; then
+    if test &quot;$(readlink -f &quot;/usr/lib/$library&quot;)&quot; != &quot;$target&quot;; then
+      printf &#x27;Existing runtime must be reviewed: /usr/lib/%s\n&#x27; &quot;$library&quot; &gt;&amp;2
+      exit 2
+    fi
+  else
+    ln -s &quot;$target&quot; &quot;/usr/lib/$library&quot;
+  fi
+done
+for unit in qwen3.5-2b.service qwen3.5-2b-socket.service qwen3.5-2b-socket.socket; do
+  install -m 644 &quot;$SCRIPT_DIR/$unit&quot; &quot;/etc/systemd/system/$unit&quot;
+done
+install -m 644 &quot;$SCRIPT_DIR/verify_api.py&quot; &quot;$SCRIPT_DIR/verify_management.py&quot; bin/
+systemd-analyze verify /etc/systemd/system/qwen3.5-2b.service /etc/systemd/system/qwen3.5-2b-socket.service /etc/systemd/system/qwen3.5-2b-socket.socket
+systemctl daemon-reload
+systemctl start qwen3.5-2b.service qwen3.5-2b-socket.socket
+for attempt in $(seq 1 240); do
+  if curl -fsS --max-time 2 http://127.0.0.1:18080/health; then
+    printf &#x27;\n&#x27;
+    curl -fsS --unix-socket /run/qwen3.5-2b/inference.sock http://localhost/v1/models
+    printf &#x27;\n&#x27;
+    exit 0
+  fi
+  if test &quot;$(systemctl show qwen3.5-2b.service -p NRestarts --value)&quot; -gt 0; then break; fi
+  sleep 2
+done
+journalctl -u qwen3.5-2b.service --no-pager -n 80
+exit 1</code></pre></details><details><summary>llm-constraints.txt</summary><pre><code class="">accelerate==1.5.2
+addict==2.4.0
+aiohappyeyeballs==2.7.1
+aiohttp==3.14.5
+aiosignal==1.4.0
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.16.0
+argcomplete==3.7.2
+attrs==26.1.0
+auto-gptq==0.7.1
+black==26.10.1
+certifi==2026.10.23
+charset-normalizer==3.5.2
+click==8.5.0
+coloredlogs==15.0.1
+colorlog==6.8.2
+contourpy==1.3.3
+cycler==0.12.1
+datamodel-code-generator==0.26.0
+datasets==4.1.1
+dill==0.4.0
+dnspython==2.9.2
+easydict==1.13
+einops==0.4.1
+email-validator==2.3.0
+filelock==4.2.4
+flatbuffers==24.3.25
+fonttools==4.68.0
+frozenlist==1.8.0
+fsspec==2025.9.0
+gekko==1.3.3
+genson==1.4.0
+h11==0.16.0
+hf-xet==1.8.0
+httpcore==1.0.9
+httpx==0.28.1
+huggingface-hub==1.33.0
+humanfriendly==10.0
+idna==3.20
+inflect==5.6.2
+isort==5.13.2
+jinja2==3.1.4
+jsonlines==4.0.0
+jsonschema==4.23.0
+jsonschema-specifications==2025.9.1
+kiwisolver==1.5.1
+markdown-it-py==4.2.0
+markupsafe==3.0.3
+matplotlib==3.11.2
+mdurl==0.1.2
+mpmath==1.3.0
+multidict==7.2.1
+multiprocess==0.70.16
+mypy-extensions==1.2.0
+networkx==3.7
+numpy==1.26.4
+onnx==1.18.0
+optimum==1.23.3
+packaging==26.3
+pandas==3.0.6
+pathspec==1.1.1
+peft==0.21.2
+pillow==10.4.0
+platformdirs==4.14.4
+propcache==0.5.4
+protobuf==4.25.4
+psutil==7.2.2
+pyarrow==21.0.0
+pydantic==2.14.2
+pydantic-core==2.50.2
+pygments==2.21.0
+pyparsing==3.3.3
+python-dateutil==4.0.0
+pytokens==0.4.1
+pyyaml==6.0.3
+referencing==0.37.0
+regex==2026.9.29
+requests==2.34.2
+rich==15.0.0
+rouge==1.0.1
+rpds-py==2026.9.1
+safetensors==0.5.3
+scipy==1.17.1
+sentencepiece==0.2.0
+setuptools==78.1.0
+shellingham==1.5.4
+six==1.17.0
+sympy==1.13.1
+tabulate==0.9.0
+tiktoken==0.9.0
+timm==1.0.19
+tokenizers==0.22.2
+torch==2.6.0+cpu
+torchvision==0.21.0+cpu
+tqdm==4.70.1
+transformers==5.8.0
+transformers-stream-generator==0.0.5
+typer==0.27.3
+typing-extensions==4.16.0
+typing-inspection==0.4.4
+tzdata==2026.6
+urllib3==2.8.0
+xxhash==4.0.2
+yarl==1.25.1</code></pre></details><details><summary>qwen3.5-2b-socket.service</summary><pre><code class="">[Unit]
+Description=Qwen3.5-2B Unix socket to local HTTP forwarding
+Requires=qwen3.5-2b.service
+After=qwen3.5-2b.service
+
+[Service]
+DynamicUser=yes
+User=qwen35-proxy
+ExecStart=/usr/lib/systemd/systemd-socket-proxyd 127.0.0.1:18080
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes</code></pre></details><details><summary>qwen3.5-2b-socket.socket</summary><pre><code class="">[Unit]
+Description=Qwen3.5-2B local Unix socket
+
+[Socket]
+ListenStream=/run/qwen3.5-2b/inference.sock
+SocketMode=0600
+DirectoryMode=0700
+RemoveOnStop=yes
+
+[Install]
+WantedBy=sockets.target</code></pre></details><details><summary>qwen3.5-2b.service</summary><pre><code class="">[Unit]
+Description=Qwen3.5-2B local text and image question answering on RK3588 NPU
+After=local-fs.target
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+[Service]
+Type=simple
+DynamicUser=yes
+User=qwen35
+SupplementaryGroups=render video
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+WorkingDirectory=/opt/qwen3.5-2b
+Environment=RKLLM_LOG_LEVEL=1
+Environment=OMP_NUM_THREADS=2
+Environment=OPENBLAS_NUM_THREADS=2
+UMask=0077
+ExecStart=/opt/qwen3.5-2b/api-venv/bin/qwen3.5-2b /opt/qwen3.5-2b/src/app/fastapi_server_vlm.py --encoder_model /opt/qwen3.5-2b/models/qwen3.5_vision_rk3588.rknn --llm_model /opt/qwen3.5-2b/models/qwen3.5-2b_fp16_rk3588.rkllm --model_name Qwen3.5-2B --target_platform rk3588 --host 127.0.0.1 --port 18080 --max_context_len 2048 --embed_flash 1 --default_max_tokens 256 --default_temperature 0.1 --max_concurrent 1 --timeout 300 --rknn_core_num 3
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=45
+KillMode=control-group
+LimitNOFILE=65536
+MemoryMax=6G
+OOMScoreAdjust=500
+
+[Install]
+WantedBy=multi-user.target</code></pre></details><details><summary>summarize_evidence.py</summary><pre><code class="">&quot;&quot;&quot;Print raw measurements, unit conversions, and observed request times.&quot;&quot;&quot;
+import json
+from pathlib import Path
+
+root = Path(__file__).resolve().parents[1] / &#x27;evidence&#x27;
+api = json.loads((root / &#x27;api-verification-summary.json&#x27;).read_text())
+final = json.loads((root / &#x27;final-environment.json&#x27;).read_text())
+management = json.loads((root / &#x27;management-verification.json&#x27;).read_text())
+source_weight_bytes = 4548144832
+print(&#x27;Raw source tensor bytes:&#x27;, source_weight_bytes)
+print(&#x27;Raw service peak bytes:&#x27;, final[&#x27;service_memory_peak_bytes&#x27;])
+print(&#x27;Raw minimum MemAvailable KiB:&#x27;, api[&#x27;minimum_mem_available_kib&#x27;])
+print(&#x27;Raw service swap bytes:&#x27;, final[&#x27;service_swap_current_bytes&#x27;])
+print(f&#x27;Source tensor data: {source_weight_bytes / 10**9:.4f} GB / {source_weight_bytes / 2**30:.4f} GiB&#x27;)
+print(f&#x27;Service cgroup peak: {final[&quot;service_memory_peak_bytes&quot;] / 2**30:.3f} GiB&#x27;)
+print(f&#x27;Minimum system MemAvailable: {api[&quot;minimum_mem_available_kib&quot;] / 2**20:.3f} GiB&#x27;)
+print(f&#x27;Service swap at final sample: {final[&quot;service_swap_current_bytes&quot;] / 2**20:.3f} MiB&#x27;)
+print(&#x27;Observed maximum NPU core loads (%):&#x27;, api[&#x27;observed_max_npu_core_load_percent&#x27;])
+for test in api[&#x27;tests&#x27;]:
+    print(f&#x27;{test[&quot;test&quot;]}: {test[&quot;seconds&quot;]:.3f} s; {test[&quot;answer&quot;]}&#x27;)
+print(f&#x27;Abort to stream close: {management[&quot;abort&quot;][&quot;seconds_until_stream_closed&quot;]:.3f} s&#x27;)
+print(&#x27;OOM kills:&#x27;, final[&#x27;memory_events&#x27;][&#x27;oom_kill&#x27;])
+print(&#x27;Automatic restarts:&#x27;, final[&#x27;systemd&#x27;][&#x27;NRestarts&#x27;])</code></pre></details><details><summary>verify_api.py</summary><pre><code class="">import base64
+import http.client
+import json
+import re
+import socket
+import threading
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(&#x27;/opt/qwen3.5-2b&#x27;)
+SOCKET_PATH = &#x27;/run/qwen3.5-2b/inference.sock&#x27;
+
+class UnixConnection(http.client.HTTPConnection):
+    def connect(self):
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.sock.settimeout(self.timeout)
+        self.sock.connect(SOCKET_PATH)
+
+def request(path, body=None):
+    conn = UnixConnection(&#x27;localhost&#x27;, timeout=300)
+    try:
+        payload = None if body is None else json.dumps(body, ensure_ascii=False).encode(&#x27;utf-8&#x27;)
+        conn.request(&#x27;GET&#x27; if payload is None else &#x27;POST&#x27;, path, body=payload,
+                     headers={&#x27;Content-Type&#x27;: &#x27;application/json&#x27;})
+        response = conn.getresponse()
+        data = response.read().decode(&#x27;utf-8&#x27;)
+        assert response.status == 200, (response.status, data)
+        return json.loads(data)
+    finally:
+        conn.close()
+
+samples = []
+stop = threading.Event()
+
+def monitor():
+    while not stop.is_set():
+        raw = Path(&#x27;/sys/kernel/debug/rknpu/load&#x27;).read_text().strip()
+        meminfo = dict(re.findall(r&#x27;^(\w+):\s*(\d+)&#x27;, Path(&#x27;/proc/meminfo&#x27;).read_text(), flags=re.M))
+        cg = Path(&#x27;/sys/fs/cgroup/system.slice/qwen3.5-2b.service/memory.current&#x27;)
+        samples.append({&#x27;monotonic&#x27;: time.monotonic(), &#x27;npu_load&#x27;: raw,
+                        &#x27;mem_available_kib&#x27;: int(meminfo[&#x27;MemAvailable&#x27;]),
+                        &#x27;swap_free_kib&#x27;: int(meminfo[&#x27;SwapFree&#x27;]),
+                        &#x27;service_memory_bytes&#x27;: int(cg.read_text()) if cg.exists() else None})
+        stop.wait(0.25)
+
+print(&#x27;Health:&#x27;, json.dumps(request(&#x27;/health&#x27;), ensure_ascii=False), flush=True)
+thread = threading.Thread(target=monitor, daemon=True)
+thread.start()
+tests = [
+    (&#x27;text&#x27;, None, &#x27;请用一句话说明什么是太阳系。&#x27;),
+    (&#x27;image_a&#x27;, ROOT / &#x27;samples/demo.jpg&#x27;, &#x27;请用一句话描述图片中的主体。&#x27;),
+    (&#x27;image_b&#x27;, ROOT / &#x27;samples/buffalo.jpg&#x27;, &#x27;图中主要是什么动物？请用中文简短回答。&#x27;),
+    (&#x27;image_a_again&#x27;, ROOT / &#x27;samples/demo.jpg&#x27;, &#x27;宇航员手中拿着什么？请用中文简短回答。&#x27;),
+]
+results = []
+try:
+    for name, image, prompt in tests:
+        content = [{&#x27;type&#x27;: &#x27;text&#x27;, &#x27;text&#x27;: prompt}]
+        if image:
+            content.append({&#x27;type&#x27;: &#x27;image_url&#x27;, &#x27;image_url&#x27;: {
+                &#x27;url&#x27;: &#x27;data:image/jpeg;base64,&#x27; + base64.b64encode(image.read_bytes()).decode(&#x27;ascii&#x27;)}})
+        body = {&#x27;model&#x27;: &#x27;Qwen3.5-2B&#x27;, &#x27;messages&#x27;: [{&#x27;role&#x27;: &#x27;user&#x27;, &#x27;content&#x27;: content}],
+                &#x27;stream&#x27;: False, &#x27;max_tokens&#x27;: 128, &#x27;temperature&#x27;: 0.1, &#x27;enable_thinking&#x27;: False}
+        start = time.monotonic()
+        response = request(&#x27;/v1/chat/completions&#x27;, body)
+        elapsed = time.monotonic() - start
+        answer = response[&#x27;choices&#x27;][0][&#x27;message&#x27;][&#x27;content&#x27;]
+        assert answer and answer.strip(), response
+        health = request(&#x27;/health&#x27;)
+        assert health[&#x27;last_cleared_kv_positions&#x27;] == 0, health
+        result = {&#x27;test&#x27;: name, &#x27;prompt&#x27;: prompt, &#x27;seconds&#x27;: elapsed, &#x27;response&#x27;: response,
+                  &#x27;health_after_request&#x27;: health}
+        results.append(result)
+        (ROOT / &#x27;evidence&#x27; / f&#x27;{name}-response.json&#x27;).write_text(json.dumps(result, ensure_ascii=False, indent=2))
+        print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)
+finally:
+    stop.set()
+    thread.join()
+    (ROOT / &#x27;evidence/api-load-samples.json&#x27;).write_text(json.dumps(samples, ensure_ascii=False, indent=2))
+
+max_load = [0, 0, 0]
+for sample in samples:
+    for core, value in re.findall(r&#x27;Core(\d+):\s*(\d+)%&#x27;, sample[&#x27;npu_load&#x27;]):
+        max_load[int(core)] = max(max_load[int(core)], int(value))
+peak_file = Path(&#x27;/sys/fs/cgroup/system.slice/qwen3.5-2b.service/memory.peak&#x27;)
+summary = {
+    &#x27;checked_at_utc&#x27;: datetime.now(timezone.utc).isoformat(),
+    &#x27;tests&#x27;: [{&#x27;test&#x27;: item[&#x27;test&#x27;], &#x27;seconds&#x27;: item[&#x27;seconds&#x27;],
+               &#x27;answer&#x27;: item[&#x27;response&#x27;][&#x27;choices&#x27;][0][&#x27;message&#x27;][&#x27;content&#x27;]} for item in results],
+    &#x27;observed_max_npu_core_load_percent&#x27;: max_load,
+    &#x27;minimum_mem_available_kib&#x27;: min(item[&#x27;mem_available_kib&#x27;] for item in samples),
+    &#x27;minimum_swap_free_kib&#x27;: min(item[&#x27;swap_free_kib&#x27;] for item in samples),
+    &#x27;service_cgroup_peak_memory_bytes&#x27;: int(peak_file.read_text()) if peak_file.exists() else None,
+}
+(ROOT / &#x27;evidence/api-verification-summary.json&#x27;).write_text(json.dumps(summary, ensure_ascii=False, indent=2))
+print(&#x27;SUMMARY&#x27;, json.dumps(summary, ensure_ascii=False, indent=2), flush=True)
+assert all(value &gt; 0 for value in max_load), max_load</code></pre></details><details><summary>verify_management.py</summary><pre><code class="">&quot;&quot;&quot;Exercise the deployed Unix-socket API, including real native cancellation.&quot;&quot;&quot;
+import http.client
+import json
+import socket
+import threading
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(&#x27;/opt/qwen3.5-2b&#x27;)
+SOCKET = &#x27;/run/qwen3.5-2b/inference.sock&#x27;
+
+class Connection(http.client.HTTPConnection):
+    def connect(self):
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.sock.settimeout(self.timeout)
+        self.sock.connect(SOCKET)
+
+def call(path, body=None):
+    conn = Connection(&#x27;localhost&#x27;, timeout=60)
+    try:
+        payload = json.dumps(body).encode() if body is not None else None
+        conn.request(&#x27;POST&#x27; if body is not None else &#x27;GET&#x27;, path, payload,
+                     {&#x27;Content-Type&#x27;: &#x27;application/json&#x27;})
+        response = conn.getresponse()
+        return response.status, json.loads(response.read())
+    finally:
+        conn.close()
+
+def wait_idle():
+    deadline = time.monotonic() + 30
+    while time.monotonic() &lt; deadline:
+        status, health = call(&#x27;/health&#x27;)
+        if status == 200 and health[&#x27;active_requests&#x27;] == 0:
+            assert health[&#x27;last_cleared_kv_positions&#x27;] == 0, health
+            return health
+        time.sleep(.1)
+    raise AssertionError(&#x27;worker did not become idle&#x27;)
+
+body = {&#x27;model&#x27;: &#x27;Qwen3.5-2B&#x27;, &#x27;messages&#x27;: [{&#x27;role&#x27;: &#x27;user&#x27;, &#x27;content&#x27;:
+        &#x27;请从1开始逐个数字数到500，每行一个数字，不要省略。&#x27;}],
+        &#x27;max_tokens&#x27;: 512, &#x27;stream&#x27;: True, &#x27;enable_thinking&#x27;: False}
+result = {&#x27;checked_at_utc&#x27;: datetime.now(timezone.utc).isoformat()}
+conn = Connection(&#x27;localhost&#x27;, timeout=90)
+conn.request(&#x27;POST&#x27;, &#x27;/v1/chat/completions&#x27;, json.dumps(body).encode(),
+             {&#x27;Content-Type&#x27;: &#x27;application/json&#x27;})
+response = conn.getresponse()
+assert response.status == 200, response.status
+first_content = None
+while first_content is None:
+    line = response.readline().decode().strip()
+    if line.startswith(&#x27;data: {&#x27;):
+        chunk = json.loads(line[6:])
+        if chunk[&#x27;choices&#x27;][0][&#x27;delta&#x27;].get(&#x27;content&#x27;):
+            first_content = chunk
+status, busy = call(&#x27;/v1/cache/clear&#x27;, {})
+assert status == 409, (status, busy)
+start = time.monotonic()
+status, aborted = call(&#x27;/v1/abort&#x27;, {})
+assert status == 200, (status, aborted)
+assert aborted[&#x27;requests&#x27;] and aborted[&#x27;requests&#x27;][0][&#x27;abort_code&#x27;] == 0, aborted
+tail = response.read().decode()
+conn.close()
+assert &#x27;data: [DONE]&#x27; in tail, tail
+result[&#x27;abort&#x27;] = {&#x27;response&#x27;: aborted, &#x27;seconds_until_stream_closed&#x27;: time.monotonic()-start,
+                   &#x27;first_chunk&#x27;: first_content, &#x27;busy_clear&#x27;: busy,
+                   &#x27;idle_after_abort&#x27;: wait_idle()}
+status, cleared = call(&#x27;/v1/cache/clear&#x27;, {})
+assert status == 200 and cleared[&#x27;kv_positions&#x27;] == 0, (status, cleared)
+result[&#x27;explicit_clear&#x27;] = cleared
+status, answered = call(&#x27;/v1/chat/completions&#x27;, {
+    &#x27;model&#x27;: &#x27;Qwen3.5-2B&#x27;, &#x27;messages&#x27;: [{&#x27;role&#x27;: &#x27;user&#x27;, &#x27;content&#x27;: &#x27;法国的首都是哪里？请简短回答。&#x27;}],
+    &#x27;max_tokens&#x27;: 32, &#x27;enable_thinking&#x27;: False})
+assert status == 200 and &#x27;巴黎&#x27; in answered[&#x27;choices&#x27;][0][&#x27;message&#x27;][&#x27;content&#x27;], (status, answered)
+result[&#x27;question_after_abort&#x27;] = answered
+result[&#x27;idle_after_success&#x27;] = wait_idle()
+
+# A disconnected stream must also stop its worker before freeing the slot.
+conn = Connection(&#x27;localhost&#x27;, timeout=90)
+conn.request(&#x27;POST&#x27;, &#x27;/v1/chat/completions&#x27;, json.dumps(body).encode(),
+             {&#x27;Content-Type&#x27;: &#x27;application/json&#x27;})
+response = conn.getresponse()
+while True:
+    line = response.readline().decode().strip()
+    if line.startswith(&#x27;data: {&#x27;) and json.loads(line[6:])[&#x27;choices&#x27;][0][&#x27;delta&#x27;].get(&#x27;content&#x27;):
+        break
+conn.sock.shutdown(socket.SHUT_RDWR)
+response.close()
+conn.close()
+time.sleep(.3)
+result[&#x27;idle_after_disconnect&#x27;] = wait_idle()
+
+# Preprocessing failure must release the worker without retaining history.
+status, invalid = call(&#x27;/v1/chat/completions&#x27;, {
+    &#x27;model&#x27;: &#x27;Qwen3.5-2B&#x27;, &#x27;messages&#x27;: [{&#x27;role&#x27;: &#x27;user&#x27;, &#x27;content&#x27;: [
+        {&#x27;type&#x27;: &#x27;image_url&#x27;, &#x27;image_url&#x27;: {&#x27;url&#x27;: &#x27;data:image/jpeg;base64,bm90IGFuIGltYWdl&#x27;}}]}],
+    &#x27;enable_thinking&#x27;: False})
+assert status == 500, (status, invalid)
+result[&#x27;invalid_image&#x27;] = {&#x27;status&#x27;: status, &#x27;response&#x27;: invalid, &#x27;idle&#x27;: wait_idle()}
+status, idle_abort = call(&#x27;/v1/abort&#x27;, {})
+assert status == 200 and idle_abort[&#x27;status&#x27;] == &#x27;idle&#x27;, (status, idle_abort)
+result[&#x27;idle_abort&#x27;] = idle_abort
+(ROOT / &#x27;evidence/management-verification.json&#x27;).write_text(json.dumps(result, ensure_ascii=False, indent=2))
+print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)</code></pre></details><details><summary>vision-requirements.freeze.txt</summary><pre><code class="">accelerate==1.5.2
+certifi==2026.10.23
+charset-normalizer==3.5.2
+fast-histogram==0.14
+filelock==4.2.4
+flatbuffers==25.12.19
+fsspec==2026.9.0
+hf-xet==1.8.0
+huggingface-hub==0.36.2
+idna==3.20
+jinja2==3.1.6
+markupsafe==3.0.3
+ml-dtypes==0.5.4
+mpmath==1.3.0
+networkx==3.7
+numpy==1.26.4
+onnx==1.18.0
+onnxruntime==1.26.0
+opencv-python==4.11.0.86
+packaging==26.3
+pillow==13.0.0
+protobuf==4.25.4
+psutil==7.2.2
+pyyaml==6.0.3
+regex==2026.9.29
+requests==2.34.2
+rknn-toolkit2==2.5.0
+ruamel-yaml==0.19.1
+safetensors==0.8.0
+scipy==1.17.1
+setuptools==78.1.0
+sympy==1.14.0
+tokenizers==0.22.2
+torch==2.4.0+cpu
+torchvision==0.19.0+cpu
+tqdm==4.70.1
+transformers==4.57.0
+typing-extensions==4.16.0
+urllib3==2.8.0</code></pre></details></section><section id="license"><h2>9. 来源、许可证与发布边界</h2>
+<p>本教程、配置和自行编写的脚本/新增代码使用 MIT；第三方依赖不包含在该授权范围内。Qwen 官方权重按模型许可处理，Rockchip SDK/运行库遵循各自 LICENSE。没有收录这些模型、SDK、二进制或图片。</p>
+<p>VLM 服务来自第三方个人测试项目，核查时未声明许可证，不应把它当成可自由再分发的 MIT 软件。本资料仅给出固定来源和本地改动脚本；脚本只存新增内容与数值编辑范围，不包含上游源码或补丁上下文，不授予上游权限。取得、修改或再分发所需权限应由原作者明确授权。</p>
+<ul><li><a href="https://huggingface.co/Qwen/Qwen3.5-2B/tree/15852e8c16360a2fea060d615a32b45270f8a8fc">Qwen 官方模型与许可证</a></li>
+<li><a href="https://github.com/airockchip/rknn-llm/tree/f7390530443bf84f0394255a449d7cbe81e69d1c">RKLLM 固定版本与官方示例</a></li>
+<li><a href="https://github.com/airockchip/rknn-toolkit2/tree/2c723177a94fac65cbc036d722907ddbc91980cf">RKNN Toolkit2 固定版本</a></li>
+<li><a href="https://github.com/Hanzo-Huang/rkllm-docker/tree/ad016395d68e4fa789e139567b92c2320ba02249">第三方 VLM 服务固定版本</a></li></ul>
+<details><summary>查询与来源记录全文</summary><pre><code class=""># 来源与版本记录
+
+查询日期：2026-11-04，时区 UTC+08:00。所有结论限于固定版本和列明的实测条件。
+
+## 模型与工具
+
+- Qwen 官方模型：[Qwen/Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B/tree/15852e8c16360a2fea060d615a32b45270f8a8fc)。固定 revision `15852e8c16360a2fea060d615a32b45270f8a8fc`，模型元数据声明 Apache-2.0。来源权重及许可证由使用者从官方仓库获取，本仓库不分发权重。
+- 语言转换及运行时：[airockchip/rknn-llm](https://github.com/airockchip/rknn-llm/tree/f7390530443bf84f0394255a449d7cbe81e69d1c)，release-v1.3.1；其 [LICENSE](https://github.com/airockchip/rknn-llm/blob/f7390530443bf84f0394255a449d7cbe81e69d1c/LICENSE) 及所含第三方条款继续适用。
+- 视觉编译及运行时：[airockchip/rknn-toolkit2](https://github.com/airockchip/rknn-toolkit2/tree/2c723177a94fac65cbc036d722907ddbc91980cf)，v2.5.0；适用 [RKNN SDK License](https://github.com/airockchip/rknn-toolkit2/blob/2c723177a94fac65cbc036d722907ddbc91980cf/LICENSE)，不能以本仓库 MIT 许可证替代。
+- VLM 服务：[Hanzo-Huang/rkllm-docker](https://github.com/Hanzo-Huang/rkllm-docker/tree/ad016395d68e4fa789e139567b92c2320ba02249)，固定 commit `ad016395d68e4fa789e139567b92c2320ba02249`。这是第三方个人测试项目，不是 Qwen 或 Rockchip 的官方服务端发行版。
+- Python 环境工具：[uv 0.13.7](https://github.com/astral-sh/uv/releases/tag/0.13.7)。下载由脚本校验 SHA-256，本仓库不分发工具二进制。
+
+## 查询条件与结果
+
+1. 通过 MCP search_service 检查官方模型配置、RKLLM CHANGELOG 和 benchmark：确认 Qwen3.5 是视觉语言模型，RKLLM 已添加支持。官方量化 benchmark 不用于推导本教程 FP16 的性能或内存。
+2. 通过 Hugging Face 官方 API 检查模型文件清单与固定提交，下载后核验原权重 SHA-256：`aa33250c4fc64891ddfaba3a314fd9542ea371843c387178b425fbcc5ed680b1`。
+3. 通过实际 Toolkit 构建与板端测试核实未量化路径：`do_quantization=False`，运行时日志为 FP16；这不是将原始 BF16 Safetensors 文件直接交给 NPU。视觉模型同样未量化。
+4. 通过 `gh repo view --json licenseInfo` 和 `gh api repos/.../contents` 检查服务端仓库许可证：API 返回 `licenseInfo: null`，根目录没有 LICENSE；固定版本源码也没有许可证声明。不能推断它采用 MIT 或其他开源许可。
+5. 通过 `gh api repos/airockchip/.../contents/LICENSE?ref=...` 检查上述固定 SDK 版本的许可证。RKLLM 的许可证包含再分发条件及第三方声明；RKNN 使用专门 SDK 协议。
+
+## 发布边界
+
+本仓库仅分发自行编写的教程、服务配置、转换/安装/验证脚本及本地新增代码，使用 MIT。没有收录第三方服务端源码、含上游源码上下文的差异补丁、模型、SDK、运行库或示例图片。安装脚本从原作者固定版本获取依赖；`apply_local_changes.py` 仅存储本地新增内容和数值编辑范围，并校验原始源码与结果散列。它不向使用者授予上游服务端的使用、修改或再分发许可。需要这些权限时，应向原作者确认；没有明确许可的上游不能作为可自由再分发的软件打包。
+
+模型名、芯片名和项目名称用于标识兼容目标，不表示获得权利人认可或背书。本项目不是 Qwen、Rockchip、Armbian、systemd 或第三方服务项目的官方发行版。</code></pre></details>
+<details><summary>MIT 许可证</summary><pre><code class="">MIT License
+
+Copyright (c) 2026 qwen3.5-2b-rk3588-npu contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</code></pre></details></section></main></body></html>

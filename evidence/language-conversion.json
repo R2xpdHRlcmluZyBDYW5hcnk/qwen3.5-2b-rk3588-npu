@@ -1,0 +1,13 @@
+{
+  "source_repo": "Qwen/Qwen3.5-2B",
+  "source_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "toolkit": "1.3.1",
+  "do_quantization": false,
+  "optimization_level": 0,
+  "target_platform": "rk3588",
+  "num_npu_core": 3,
+  "max_context": 4096,
+  "output_file": "qwen3.5-2b_fp16_rk3588.rkllm",
+  "output_bytes": 4818689316,
+  "sha256": "e030a595dd848303808bd28f45fce6474285cbaeef55f882529b388ba3f94cb8"
+}

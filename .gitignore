@@ -1,0 +1,24 @@
+# Models, runtimes, environments and local state
+*.safetensors
+*.rkllm
+*.rknn
+*.onnx
+*.so
+*.whl
+*.tar.gz
+*.zip
+models/
+outputs/
+python/
+*-venv/
+cache/
+logs/
+*.log
+__pycache__/
+*.pyc
+.env
+.env.*
+*.pem
+*.key
+id_rsa*
+id_ed25519*

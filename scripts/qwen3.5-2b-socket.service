@@ -1,0 +1,13 @@
+[Unit]
+Description=Qwen3.5-2B Unix socket to local HTTP forwarding
+Requires=qwen3.5-2b.service
+After=qwen3.5-2b.service
+
+[Service]
+DynamicUser=yes
+User=qwen35-proxy
+ExecStart=/usr/lib/systemd/systemd-socket-proxyd 127.0.0.1:18080
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes

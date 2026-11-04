@@ -1,0 +1,33 @@
+{
+  "checked_at_utc": "2026-11-04T09:38:34.544691+00:00",
+  "tests": [
+    {
+      "test": "text",
+      "seconds": 8.546910629000195,
+      "answer": "太阳系是由太阳以及围绕其公转的八大行星、矮行星、小行星和彗星等天体组成的引力束缚系统。"
+    },
+    {
+      "test": "image_a",
+      "seconds": 19.014307729999928,
+      "answer": "一名宇航员在月球上惬意地喝着啤酒，脚搭在绿色箱子上，背景是地球和星空。"
+    },
+    {
+      "test": "image_b",
+      "seconds": 12.56788143599988,
+      "answer": "水牛"
+    },
+    {
+      "test": "image_a_again",
+      "seconds": 14.119573979000052,
+      "answer": "一瓶啤酒"
+    }
+  ],
+  "observed_max_npu_core_load_percent": [
+    98,
+    52,
+    52
+  ],
+  "minimum_mem_available_kib": 1331856,
+  "minimum_swap_free_kib": 3611724,
+  "service_cgroup_peak_memory_bytes": 6088077312
+}

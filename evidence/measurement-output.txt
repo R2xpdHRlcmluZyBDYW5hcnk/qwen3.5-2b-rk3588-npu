@@ -1,0 +1,16 @@
+Raw source tensor bytes: 4548144832
+Raw service peak bytes: 6088077312
+Raw minimum MemAvailable KiB: 1331856
+Raw service swap bytes: 4096
+Source tensor data: 4.5481 GB / 4.2358 GiB
+Service cgroup peak: 5.670 GiB
+Minimum system MemAvailable: 1.270 GiB
+Service swap at final sample: 0.004 MiB
+Observed maximum NPU core loads (%): [98, 52, 52]
+text: 8.547 s; 太阳系是由太阳以及围绕其公转的八大行星、矮行星、小行星和彗星等天体组成的引力束缚系统。
+image_a: 19.014 s; 一名宇航员在月球上惬意地喝着啤酒，脚搭在绿色箱子上，背景是地球和星空。
+image_b: 12.568 s; 水牛
+image_a_again: 14.120 s; 一瓶啤酒
+Abort to stream close: 0.249 s
+OOM kills: 0
+Automatic restarts: 0

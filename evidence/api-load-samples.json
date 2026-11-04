@@ -1,0 +1,1514 @@
+[
+  {
+    "monotonic": 6613.660847988,
+    "npu_load": "NPU load:  Core0:  0%, Core1:  0%, Core2:  0%,",
+    "mem_available_kib": 1378988,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6063734784
+  },
+  {
+    "monotonic": 6613.917813557,
+    "npu_load": "NPU load:  Core0:  0%, Core1:  0%, Core2:  0%,",
+    "mem_available_kib": 1379016,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6063517696
+  },
+  {
+    "monotonic": 6614.169053216,
+    "npu_load": "NPU load:  Core0:  0%, Core1:  0%, Core2:  0%,",
+    "mem_available_kib": 1379088,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6063517696
+  },
+  {
+    "monotonic": 6614.420144405,
+    "npu_load": "NPU load:  Core0:  0%, Core1:  0%, Core2:  0%,",
+    "mem_available_kib": 1378836,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6063517696
+  },
+  {
+    "monotonic": 6614.671225606,
+    "npu_load": "NPU load:  Core0:  8%, Core1:  9%, Core2:  8%,",
+    "mem_available_kib": 1379324,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6063517696
+  },
+  {
+    "monotonic": 6614.922294839,
+    "npu_load": "NPU load:  Core0:  8%, Core1:  9%, Core2:  8%,",
+    "mem_available_kib": 1379100,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6063517696
+  },
+  {
+    "monotonic": 6615.173826987,
+    "npu_load": "NPU load:  Core0:  8%, Core1:  9%, Core2:  8%,",
+    "mem_available_kib": 1379100,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6063517696
+  },
+  {
+    "monotonic": 6615.424929473,
+    "npu_load": "NPU load:  Core0:  8%, Core1:  9%, Core2:  8%,",
+    "mem_available_kib": 1379080,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6064033792
+  },
+  {
+    "monotonic": 6615.676836665,
+    "npu_load": "NPU load:  Core0: 24%, Core1: 24%, Core2: 24%,",
+    "mem_available_kib": 1379176,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6063525888
+  },
+  {
+    "monotonic": 6615.928086669,
+    "npu_load": "NPU load:  Core0: 24%, Core1: 24%, Core2: 24%,",
+    "mem_available_kib": 1378700,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6063783936
+  },
+  {
+    "monotonic": 6616.180008439,
+    "npu_load": "NPU load:  Core0: 24%, Core1: 24%, Core2: 24%,",
+    "mem_available_kib": 1378856,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6063546368
+  },
+  {
+    "monotonic": 6616.431174436,
+    "npu_load": "NPU load:  Core0: 24%, Core1: 24%, Core2: 24%,",
+    "mem_available_kib": 1379052,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6052843520
+  },
+  {
+    "monotonic": 6616.683235561,
+    "npu_load": "NPU load:  Core0: 47%, Core1: 46%, Core2: 46%,",
+    "mem_available_kib": 1380220,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053367808
+  },
+  {
+    "monotonic": 6616.935275972,
+    "npu_load": "NPU load:  Core0: 47%, Core1: 46%, Core2: 46%,",
+    "mem_available_kib": 1379572,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053113856
+  },
+  {
+    "monotonic": 6617.186540775,
+    "npu_load": "NPU load:  Core0: 47%, Core1: 46%, Core2: 46%,",
+    "mem_available_kib": 1379704,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053122048
+  },
+  {
+    "monotonic": 6617.437618312,
+    "npu_load": "NPU load:  Core0: 47%, Core1: 46%, Core2: 46%,",
+    "mem_available_kib": 1379896,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053638144
+  },
+  {
+    "monotonic": 6617.688676232,
+    "npu_load": "NPU load:  Core0: 50%, Core1: 49%, Core2: 48%,",
+    "mem_available_kib": 1379928,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053138432
+  },
+  {
+    "monotonic": 6617.940025841,
+    "npu_load": "NPU load:  Core0: 50%, Core1: 49%, Core2: 48%,",
+    "mem_available_kib": 1379928,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053679104
+  },
+  {
+    "monotonic": 6618.191466749,
+    "npu_load": "NPU load:  Core0: 50%, Core1: 49%, Core2: 48%,",
+    "mem_available_kib": 1379932,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053425152
+  },
+  {
+    "monotonic": 6618.442559086,
+    "npu_load": "NPU load:  Core0: 50%, Core1: 49%, Core2: 48%,",
+    "mem_available_kib": 1379708,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053429248
+  },
+  {
+    "monotonic": 6618.69371377,
+    "npu_load": "NPU load:  Core0: 50%, Core1: 50%, Core2: 50%,",
+    "mem_available_kib": 1379708,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053433344
+  },
+  {
+    "monotonic": 6618.944799613,
+    "npu_load": "NPU load:  Core0: 50%, Core1: 50%, Core2: 50%,",
+    "mem_available_kib": 1379012,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053441536
+  },
+  {
+    "monotonic": 6619.195881082,
+    "npu_load": "NPU load:  Core0: 50%, Core1: 50%, Core2: 50%,",
+    "mem_available_kib": 1379580,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053183488
+  },
+  {
+    "monotonic": 6619.447094978,
+    "npu_load": "NPU load:  Core0: 50%, Core1: 50%, Core2: 50%,",
+    "mem_available_kib": 1379160,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6052929536
+  },
+  {
+    "monotonic": 6619.698611574,
+    "npu_load": "NPU load:  Core0: 49%, Core1: 49%, Core2: 48%,",
+    "mem_available_kib": 1379168,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6052937728
+  },
+  {
+    "monotonic": 6619.950080333,
+    "npu_load": "NPU load:  Core0: 49%, Core1: 49%, Core2: 48%,",
+    "mem_available_kib": 1378720,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6052950016
+  },
+  {
+    "monotonic": 6620.201220939,
+    "npu_load": "NPU load:  Core0: 49%, Core1: 49%, Core2: 48%,",
+    "mem_available_kib": 1379524,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6052954112
+  },
+  {
+    "monotonic": 6620.453208031,
+    "npu_load": "NPU load:  Core0: 49%, Core1: 49%, Core2: 48%,",
+    "mem_available_kib": 1378800,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053478400
+  },
+  {
+    "monotonic": 6620.705316393,
+    "npu_load": "NPU load:  Core0: 52%, Core1: 52%, Core2: 52%,",
+    "mem_available_kib": 1379292,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053478400
+  },
+  {
+    "monotonic": 6620.957431465,
+    "npu_load": "NPU load:  Core0: 52%, Core1: 52%, Core2: 52%,",
+    "mem_available_kib": 1378844,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053482496
+  },
+  {
+    "monotonic": 6621.208971905,
+    "npu_load": "NPU load:  Core0: 52%, Core1: 52%, Core2: 52%,",
+    "mem_available_kib": 1378844,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053515264
+  },
+  {
+    "monotonic": 6621.460938793,
+    "npu_load": "NPU load:  Core0: 52%, Core1: 52%, Core2: 52%,",
+    "mem_available_kib": 1378852,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6052995072
+  },
+  {
+    "monotonic": 6621.712097335,
+    "npu_load": "NPU load:  Core0: 47%, Core1: 47%, Core2: 46%,",
+    "mem_available_kib": 1378856,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053523456
+  },
+  {
+    "monotonic": 6621.96351344,
+    "npu_load": "NPU load:  Core0: 47%, Core1: 47%, Core2: 46%,",
+    "mem_available_kib": 1378856,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053531648
+  },
+  {
+    "monotonic": 6622.214409168,
+    "npu_load": "NPU load:  Core0: 47%, Core1: 47%, Core2: 46%,",
+    "mem_available_kib": 1377680,
+    "swap_free_kib": 3612748,
+    "service_memory_bytes": 6053531648
+  },
+  {
+    "monotonic": 6622.466207966,
+    "npu_load": "NPU load:  Core0: 47%, Core1: 47%, Core2: 46%,",
+    "mem_available_kib": 1366152,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6050054144
+  },
+  {
+    "monotonic": 6622.717587244,
+    "npu_load": "NPU load:  Core0: 36%, Core1: 33%, Core2: 33%,",
+    "mem_available_kib": 1365860,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6050054144
+  },
+  {
+    "monotonic": 6622.968762923,
+    "npu_load": "NPU load:  Core0: 36%, Core1: 33%, Core2: 33%,",
+    "mem_available_kib": 1366460,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6049996800
+  },
+  {
+    "monotonic": 6623.220269378,
+    "npu_load": "NPU load:  Core0: 36%, Core1: 33%, Core2: 33%,",
+    "mem_available_kib": 1366460,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6049996800
+  },
+  {
+    "monotonic": 6623.471477718,
+    "npu_load": "NPU load:  Core0: 36%, Core1: 33%, Core2: 33%,",
+    "mem_available_kib": 1366460,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6049996800
+  },
+  {
+    "monotonic": 6623.722713411,
+    "npu_load": "NPU load:  Core0: 97%, Core1: 31%, Core2: 31%,",
+    "mem_available_kib": 1366136,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6049996800
+  },
+  {
+    "monotonic": 6623.974321302,
+    "npu_load": "NPU load:  Core0: 97%, Core1: 31%, Core2: 31%,",
+    "mem_available_kib": 1366136,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6050258944
+  },
+  {
+    "monotonic": 6624.225660254,
+    "npu_load": "NPU load:  Core0: 97%, Core1: 31%, Core2: 31%,",
+    "mem_available_kib": 1357368,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6052192256
+  },
+  {
+    "monotonic": 6624.476800264,
+    "npu_load": "NPU load:  Core0: 97%, Core1: 31%, Core2: 31%,",
+    "mem_available_kib": 1357688,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6052450304
+  },
+  {
+    "monotonic": 6624.727898498,
+    "npu_load": "NPU load:  Core0: 42%, Core1: 14%, Core2: 14%,",
+    "mem_available_kib": 1357016,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6052192256
+  },
+  {
+    "monotonic": 6624.978992065,
+    "npu_load": "NPU load:  Core0: 42%, Core1: 14%, Core2: 14%,",
+    "mem_available_kib": 1356792,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6052192256
+  },
+  {
+    "monotonic": 6625.231413701,
+    "npu_load": "NPU load:  Core0: 42%, Core1: 14%, Core2: 14%,",
+    "mem_available_kib": 1356792,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6052192256
+  },
+  {
+    "monotonic": 6625.483049802,
+    "npu_load": "NPU load:  Core0: 42%, Core1: 14%, Core2: 14%,",
+    "mem_available_kib": 1355288,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054330368
+  },
+  {
+    "monotonic": 6625.734272808,
+    "npu_load": "NPU load:  Core0: 11%, Core1: 11%, Core2: 11%,",
+    "mem_available_kib": 1355288,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054068224
+  },
+  {
+    "monotonic": 6625.985370096,
+    "npu_load": "NPU load:  Core0: 11%, Core1: 11%, Core2: 11%,",
+    "mem_available_kib": 1355288,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053810176
+  },
+  {
+    "monotonic": 6626.236483134,
+    "npu_load": "NPU load:  Core0: 11%, Core1: 11%, Core2: 11%,",
+    "mem_available_kib": 1355288,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053810176
+  },
+  {
+    "monotonic": 6626.487588577,
+    "npu_load": "NPU load:  Core0: 11%, Core1: 11%, Core2: 11%,",
+    "mem_available_kib": 1355288,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053810176
+  },
+  {
+    "monotonic": 6626.738761341,
+    "npu_load": "NPU load:  Core0: 18%, Core1: 18%, Core2: 18%,",
+    "mem_available_kib": 1355264,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053810176
+  },
+  {
+    "monotonic": 6626.989871683,
+    "npu_load": "NPU load:  Core0: 18%, Core1: 18%, Core2: 18%,",
+    "mem_available_kib": 1355264,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053810176
+  },
+  {
+    "monotonic": 6627.241428603,
+    "npu_load": "NPU load:  Core0: 18%, Core1: 18%, Core2: 18%,",
+    "mem_available_kib": 1355252,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053810176
+  },
+  {
+    "monotonic": 6627.492608063,
+    "npu_load": "NPU load:  Core0: 18%, Core1: 18%, Core2: 18%,",
+    "mem_available_kib": 1355628,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054068224
+  },
+  {
+    "monotonic": 6627.744624325,
+    "npu_load": "NPU load:  Core0: 14%, Core1: 14%, Core2: 13%,",
+    "mem_available_kib": 1355992,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053810176
+  },
+  {
+    "monotonic": 6627.996509618,
+    "npu_load": "NPU load:  Core0: 14%, Core1: 14%, Core2: 13%,",
+    "mem_available_kib": 1355644,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053810176
+  },
+  {
+    "monotonic": 6628.247583428,
+    "npu_load": "NPU load:  Core0: 14%, Core1: 14%, Core2: 13%,",
+    "mem_available_kib": 1355396,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053810176
+  },
+  {
+    "monotonic": 6628.4986826,
+    "npu_load": "NPU load:  Core0: 14%, Core1: 14%, Core2: 13%,",
+    "mem_available_kib": 1355396,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053810176
+  },
+  {
+    "monotonic": 6628.750259797,
+    "npu_load": "NPU load:  Core0: 18%, Core1: 19%, Core2: 18%,",
+    "mem_available_kib": 1355512,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053810176
+  },
+  {
+    "monotonic": 6629.001410543,
+    "npu_load": "NPU load:  Core0: 18%, Core1: 19%, Core2: 18%,",
+    "mem_available_kib": 1355656,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053810176
+  },
+  {
+    "monotonic": 6629.252514618,
+    "npu_load": "NPU load:  Core0: 18%, Core1: 19%, Core2: 18%,",
+    "mem_available_kib": 1355404,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053810176
+  },
+  {
+    "monotonic": 6629.503627137,
+    "npu_load": "NPU load:  Core0: 18%, Core1: 19%, Core2: 18%,",
+    "mem_available_kib": 1355404,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053810176
+  },
+  {
+    "monotonic": 6629.75474456,
+    "npu_load": "NPU load:  Core0: 16%, Core1: 17%, Core2: 16%,",
+    "mem_available_kib": 1355632,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054068224
+  },
+  {
+    "monotonic": 6630.005851191,
+    "npu_load": "NPU load:  Core0: 16%, Core1: 17%, Core2: 16%,",
+    "mem_available_kib": 1355408,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054068224
+  },
+  {
+    "monotonic": 6630.257084124,
+    "npu_load": "NPU load:  Core0: 16%, Core1: 17%, Core2: 16%,",
+    "mem_available_kib": 1355184,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054068224
+  },
+  {
+    "monotonic": 6630.508488262,
+    "npu_load": "NPU load:  Core0: 16%, Core1: 17%, Core2: 16%,",
+    "mem_available_kib": 1355212,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054068224
+  },
+  {
+    "monotonic": 6630.759680289,
+    "npu_load": "NPU load:  Core0: 14%, Core1: 14%, Core2: 14%,",
+    "mem_available_kib": 1355212,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054068224
+  },
+  {
+    "monotonic": 6631.010851897,
+    "npu_load": "NPU load:  Core0: 14%, Core1: 14%, Core2: 14%,",
+    "mem_available_kib": 1354988,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054068224
+  },
+  {
+    "monotonic": 6631.261976544,
+    "npu_load": "NPU load:  Core0: 14%, Core1: 14%, Core2: 14%,",
+    "mem_available_kib": 1354540,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054068224
+  },
+  {
+    "monotonic": 6631.513170886,
+    "npu_load": "NPU load:  Core0: 14%, Core1: 14%, Core2: 14%,",
+    "mem_available_kib": 1354832,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053806080
+  },
+  {
+    "monotonic": 6631.769601309,
+    "npu_load": "NPU load:  Core0: 14%, Core1: 14%, Core2: 13%,",
+    "mem_available_kib": 1354896,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053806080
+  },
+  {
+    "monotonic": 6632.020836729,
+    "npu_load": "NPU load:  Core0: 14%, Core1: 14%, Core2: 13%,",
+    "mem_available_kib": 1355536,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054326272
+  },
+  {
+    "monotonic": 6632.272012061,
+    "npu_load": "NPU load:  Core0: 14%, Core1: 14%, Core2: 13%,",
+    "mem_available_kib": 1356056,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054326272
+  },
+  {
+    "monotonic": 6632.523160536,
+    "npu_load": "NPU load:  Core0: 14%, Core1: 14%, Core2: 13%,",
+    "mem_available_kib": 1356140,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054326272
+  },
+  {
+    "monotonic": 6632.774267545,
+    "npu_load": "NPU load:  Core0: 10%, Core1: 10%, Core2: 10%,",
+    "mem_available_kib": 1356140,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054326272
+  },
+  {
+    "monotonic": 6633.025379803,
+    "npu_load": "NPU load:  Core0: 10%, Core1: 10%, Core2: 10%,",
+    "mem_available_kib": 1355896,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054068224
+  },
+  {
+    "monotonic": 6633.276498771,
+    "npu_load": "NPU load:  Core0: 10%, Core1: 10%, Core2: 10%,",
+    "mem_available_kib": 1355168,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054080512
+  },
+  {
+    "monotonic": 6633.527608383,
+    "npu_load": "NPU load:  Core0: 10%, Core1: 10%, Core2: 10%,",
+    "mem_available_kib": 1355192,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054080512
+  },
+  {
+    "monotonic": 6633.778727867,
+    "npu_load": "NPU load:  Core0: 12%, Core1: 12%, Core2: 12%,",
+    "mem_available_kib": 1355192,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054080512
+  },
+  {
+    "monotonic": 6634.029859893,
+    "npu_load": "NPU load:  Core0: 12%, Core1: 12%, Core2: 12%,",
+    "mem_available_kib": 1355192,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054080512
+  },
+  {
+    "monotonic": 6634.28324435,
+    "npu_load": "NPU load:  Core0: 12%, Core1: 12%, Core2: 12%,",
+    "mem_available_kib": 1355192,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054080512
+  },
+  {
+    "monotonic": 6634.535468732,
+    "npu_load": "NPU load:  Core0: 11%, Core1: 11%, Core2: 11%,",
+    "mem_available_kib": 1355196,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054080512
+  },
+  {
+    "monotonic": 6634.786766371,
+    "npu_load": "NPU load:  Core0: 11%, Core1: 11%, Core2: 11%,",
+    "mem_available_kib": 1354952,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054088704
+  },
+  {
+    "monotonic": 6635.038040675,
+    "npu_load": "NPU load:  Core0: 11%, Core1: 11%, Core2: 11%,",
+    "mem_available_kib": 1354952,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054387712
+  },
+  {
+    "monotonic": 6635.289669673,
+    "npu_load": "NPU load:  Core0: 11%, Core1: 11%, Core2: 11%,",
+    "mem_available_kib": 1354504,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054658048
+  },
+  {
+    "monotonic": 6635.541010458,
+    "npu_load": "NPU load:  Core0: 43%, Core1: 43%, Core2: 43%,",
+    "mem_available_kib": 1354968,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054141952
+  },
+  {
+    "monotonic": 6635.793313777,
+    "npu_load": "NPU load:  Core0: 43%, Core1: 43%, Core2: 43%,",
+    "mem_available_kib": 1355140,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053892096
+  },
+  {
+    "monotonic": 6636.044670271,
+    "npu_load": "NPU load:  Core0: 43%, Core1: 43%, Core2: 43%,",
+    "mem_available_kib": 1355528,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053904384
+  },
+  {
+    "monotonic": 6636.295790204,
+    "npu_load": "NPU load:  Core0: 43%, Core1: 43%, Core2: 43%,",
+    "mem_available_kib": 1355528,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053912576
+  },
+  {
+    "monotonic": 6636.546949198,
+    "npu_load": "NPU load:  Core0: 41%, Core1: 41%, Core2: 41%,",
+    "mem_available_kib": 1355652,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054178816
+  },
+  {
+    "monotonic": 6636.798377381,
+    "npu_load": "NPU load:  Core0: 41%, Core1: 41%, Core2: 41%,",
+    "mem_available_kib": 1355400,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053928960
+  },
+  {
+    "monotonic": 6637.049556462,
+    "npu_load": "NPU load:  Core0: 41%, Core1: 41%, Core2: 41%,",
+    "mem_available_kib": 1355400,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054187008
+  },
+  {
+    "monotonic": 6637.30067662,
+    "npu_load": "NPU load:  Core0: 41%, Core1: 41%, Core2: 41%,",
+    "mem_available_kib": 1355200,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053941248
+  },
+  {
+    "monotonic": 6637.551893302,
+    "npu_load": "NPU load:  Core0: 45%, Core1: 44%, Core2: 44%,",
+    "mem_available_kib": 1355160,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054203392
+  },
+  {
+    "monotonic": 6637.80353727,
+    "npu_load": "NPU load:  Core0: 45%, Core1: 44%, Core2: 44%,",
+    "mem_available_kib": 1355788,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053953536
+  },
+  {
+    "monotonic": 6638.054667864,
+    "npu_load": "NPU load:  Core0: 45%, Core1: 44%, Core2: 44%,",
+    "mem_available_kib": 1355788,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054731776
+  },
+  {
+    "monotonic": 6638.305977264,
+    "npu_load": "NPU load:  Core0: 45%, Core1: 44%, Core2: 44%,",
+    "mem_available_kib": 1355788,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053961728
+  },
+  {
+    "monotonic": 6638.557147209,
+    "npu_load": "NPU load:  Core0: 42%, Core1: 42%, Core2: 42%,",
+    "mem_available_kib": 1355948,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054227968
+  },
+  {
+    "monotonic": 6638.80914464,
+    "npu_load": "NPU load:  Core0: 42%, Core1: 42%, Core2: 42%,",
+    "mem_available_kib": 1355960,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053969920
+  },
+  {
+    "monotonic": 6639.06039097,
+    "npu_load": "NPU load:  Core0: 42%, Core1: 42%, Core2: 42%,",
+    "mem_available_kib": 1355960,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054498304
+  },
+  {
+    "monotonic": 6639.311551251,
+    "npu_load": "NPU load:  Core0: 42%, Core1: 42%, Core2: 42%,",
+    "mem_available_kib": 1355520,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053986304
+  },
+  {
+    "monotonic": 6639.562788802,
+    "npu_load": "NPU load:  Core0: 43%, Core1: 43%, Core2: 43%,",
+    "mem_available_kib": 1355268,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054248448
+  },
+  {
+    "monotonic": 6639.81402865,
+    "npu_load": "NPU load:  Core0: 43%, Core1: 43%, Core2: 43%,",
+    "mem_available_kib": 1355268,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6053998592
+  },
+  {
+    "monotonic": 6640.065542686,
+    "npu_load": "NPU load:  Core0: 43%, Core1: 43%, Core2: 43%,",
+    "mem_available_kib": 1355268,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054252544
+  },
+  {
+    "monotonic": 6640.316797411,
+    "npu_load": "NPU load:  Core0: 43%, Core1: 43%, Core2: 43%,",
+    "mem_available_kib": 1355268,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054010880
+  },
+  {
+    "monotonic": 6640.568031395,
+    "npu_load": "NPU load:  Core0: 44%, Core1: 44%, Core2: 44%,",
+    "mem_available_kib": 1355280,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6054273024
+  },
+  {
+    "monotonic": 6640.819624416,
+    "npu_load": "NPU load:  Core0: 44%, Core1: 44%, Core2: 44%,",
+    "mem_available_kib": 1355280,
+    "swap_free_kib": 3612492,
+    "service_memory_bytes": 6054273024
+  },
+  {
+    "monotonic": 6641.070911162,
+    "npu_load": "NPU load:  Core0: 44%, Core1: 44%, Core2: 44%,",
+    "mem_available_kib": 1355056,
+    "swap_free_kib": 3612492,
+    "service_memory_bytes": 6054023168
+  },
+  {
+    "monotonic": 6641.32256252,
+    "npu_load": "NPU load:  Core0: 44%, Core1: 44%, Core2: 44%,",
+    "mem_available_kib": 1354604,
+    "swap_free_kib": 3612492,
+    "service_memory_bytes": 6054785024
+  },
+  {
+    "monotonic": 6641.573813941,
+    "npu_load": "NPU load:  Core0: 45%, Core1: 32%, Core2: 31%,",
+    "mem_available_kib": 1354444,
+    "swap_free_kib": 3612492,
+    "service_memory_bytes": 6054531072
+  },
+  {
+    "monotonic": 6641.825555076,
+    "npu_load": "NPU load:  Core0: 45%, Core1: 32%, Core2: 31%,",
+    "mem_available_kib": 1353996,
+    "swap_free_kib": 3612492,
+    "service_memory_bytes": 6054531072
+  },
+  {
+    "monotonic": 6642.077241373,
+    "npu_load": "NPU load:  Core0: 45%, Core1: 32%, Core2: 31%,",
+    "mem_available_kib": 1353748,
+    "swap_free_kib": 3612492,
+    "service_memory_bytes": 6054531072
+  },
+  {
+    "monotonic": 6642.328387462,
+    "npu_load": "NPU load:  Core0: 45%, Core1: 32%, Core2: 31%,",
+    "mem_available_kib": 1355988,
+    "swap_free_kib": 3612492,
+    "service_memory_bytes": 6054445056
+  },
+  {
+    "monotonic": 6642.579507557,
+    "npu_load": "NPU load:  Core0: 98%, Core1: 26%, Core2: 26%,",
+    "mem_available_kib": 1356096,
+    "swap_free_kib": 3612492,
+    "service_memory_bytes": 6054445056
+  },
+  {
+    "monotonic": 6642.830614496,
+    "npu_load": "NPU load:  Core0: 98%, Core1: 26%, Core2: 26%,",
+    "mem_available_kib": 1356096,
+    "swap_free_kib": 3612492,
+    "service_memory_bytes": 6054445056
+  },
+  {
+    "monotonic": 6643.081914534,
+    "npu_load": "NPU load:  Core0: 98%, Core1: 26%, Core2: 26%,",
+    "mem_available_kib": 1341536,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055514112
+  },
+  {
+    "monotonic": 6643.333288952,
+    "npu_load": "NPU load:  Core0: 98%, Core1: 26%, Core2: 26%,",
+    "mem_available_kib": 1341536,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055514112
+  },
+  {
+    "monotonic": 6643.584519534,
+    "npu_load": "NPU load:  Core0: 35%, Core1: 14%, Core2: 13%,",
+    "mem_available_kib": 1341892,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055514112
+  },
+  {
+    "monotonic": 6643.835637787,
+    "npu_load": "NPU load:  Core0: 35%, Core1: 14%, Core2: 13%,",
+    "mem_available_kib": 1341892,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055514112
+  },
+  {
+    "monotonic": 6644.086688659,
+    "npu_load": "NPU load:  Core0: 35%, Core1: 14%, Core2: 13%,",
+    "mem_available_kib": 1341892,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055514112
+  },
+  {
+    "monotonic": 6644.33778941,
+    "npu_load": "NPU load:  Core0: 35%, Core1: 14%, Core2: 13%,",
+    "mem_available_kib": 1341892,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055772160
+  },
+  {
+    "monotonic": 6644.588853957,
+    "npu_load": "NPU load:  Core0: 13%, Core1: 13%, Core2: 13%,",
+    "mem_available_kib": 1341416,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055772160
+  },
+  {
+    "monotonic": 6644.839937729,
+    "npu_load": "NPU load:  Core0: 13%, Core1: 13%, Core2: 13%,",
+    "mem_available_kib": 1341416,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055510016
+  },
+  {
+    "monotonic": 6645.090967246,
+    "npu_load": "NPU load:  Core0: 13%, Core1: 13%, Core2: 13%,",
+    "mem_available_kib": 1341416,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055510016
+  },
+  {
+    "monotonic": 6645.342022431,
+    "npu_load": "NPU load:  Core0: 13%, Core1: 13%, Core2: 13%,",
+    "mem_available_kib": 1341416,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055510016
+  },
+  {
+    "monotonic": 6645.593483321,
+    "npu_load": "NPU load:  Core0: 16%, Core1: 17%, Core2: 16%,",
+    "mem_available_kib": 1341164,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055510016
+  },
+  {
+    "monotonic": 6645.844601742,
+    "npu_load": "NPU load:  Core0: 16%, Core1: 17%, Core2: 16%,",
+    "mem_available_kib": 1341164,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055510016
+  },
+  {
+    "monotonic": 6646.095645199,
+    "npu_load": "NPU load:  Core0: 16%, Core1: 17%, Core2: 16%,",
+    "mem_available_kib": 1341168,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055510016
+  },
+  {
+    "monotonic": 6646.346874461,
+    "npu_load": "NPU load:  Core0: 16%, Core1: 17%, Core2: 16%,",
+    "mem_available_kib": 1341168,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055510016
+  },
+  {
+    "monotonic": 6646.597994013,
+    "npu_load": "NPU load:  Core0: 15%, Core1: 16%, Core2: 15%,",
+    "mem_available_kib": 1341172,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055768064
+  },
+  {
+    "monotonic": 6646.849425355,
+    "npu_load": "NPU load:  Core0: 15%, Core1: 16%, Core2: 15%,",
+    "mem_available_kib": 1340416,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055510016
+  },
+  {
+    "monotonic": 6647.100564133,
+    "npu_load": "NPU load:  Core0: 15%, Core1: 16%, Core2: 15%,",
+    "mem_available_kib": 1341524,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055510016
+  },
+  {
+    "monotonic": 6647.352607147,
+    "npu_load": "NPU load:  Core0: 15%, Core1: 16%, Core2: 15%,",
+    "mem_available_kib": 1343316,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055510016
+  },
+  {
+    "monotonic": 6647.603934611,
+    "npu_load": "NPU load:  Core0: 15%, Core1: 15%, Core2: 15%,",
+    "mem_available_kib": 1342492,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055510016
+  },
+  {
+    "monotonic": 6647.855026074,
+    "npu_load": "NPU load:  Core0: 15%, Core1: 15%, Core2: 15%,",
+    "mem_available_kib": 1342492,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055510016
+  },
+  {
+    "monotonic": 6648.10619221,
+    "npu_load": "NPU load:  Core0: 15%, Core1: 15%, Core2: 15%,",
+    "mem_available_kib": 1342860,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055510016
+  },
+  {
+    "monotonic": 6648.358076777,
+    "npu_load": "NPU load:  Core0: 15%, Core1: 15%, Core2: 15%,",
+    "mem_available_kib": 1343636,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055510016
+  },
+  {
+    "monotonic": 6648.609324548,
+    "npu_load": "NPU load:  Core0: 16%, Core1: 17%, Core2: 16%,",
+    "mem_available_kib": 1343492,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055768064
+  },
+  {
+    "monotonic": 6648.860602049,
+    "npu_load": "NPU load:  Core0: 16%, Core1: 17%, Core2: 16%,",
+    "mem_available_kib": 1343492,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055768064
+  },
+  {
+    "monotonic": 6649.111712412,
+    "npu_load": "NPU load:  Core0: 16%, Core1: 17%, Core2: 16%,",
+    "mem_available_kib": 1343492,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055768064
+  },
+  {
+    "monotonic": 6649.362932451,
+    "npu_load": "NPU load:  Core0: 16%, Core1: 17%, Core2: 16%,",
+    "mem_available_kib": 1343668,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055505920
+  },
+  {
+    "monotonic": 6649.614148367,
+    "npu_load": "NPU load:  Core0: 15%, Core1: 15%, Core2: 15%,",
+    "mem_available_kib": 1343788,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055505920
+  },
+  {
+    "monotonic": 6649.865245253,
+    "npu_load": "NPU load:  Core0: 15%, Core1: 15%, Core2: 15%,",
+    "mem_available_kib": 1343300,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055505920
+  },
+  {
+    "monotonic": 6650.116364891,
+    "npu_load": "NPU load:  Core0: 15%, Core1: 15%, Core2: 15%,",
+    "mem_available_kib": 1343300,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055505920
+  },
+  {
+    "monotonic": 6650.367569702,
+    "npu_load": "NPU load:  Core0: 15%, Core1: 15%, Core2: 15%,",
+    "mem_available_kib": 1343300,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055505920
+  },
+  {
+    "monotonic": 6650.618719344,
+    "npu_load": "NPU load:  Core0: 12%, Core1: 12%, Core2: 12%,",
+    "mem_available_kib": 1343300,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6056030208
+  },
+  {
+    "monotonic": 6650.869839506,
+    "npu_load": "NPU load:  Core0: 12%, Core1: 12%, Core2: 12%,",
+    "mem_available_kib": 1343300,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055772160
+  },
+  {
+    "monotonic": 6651.120916206,
+    "npu_load": "NPU load:  Core0: 12%, Core1: 12%, Core2: 12%,",
+    "mem_available_kib": 1343300,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055772160
+  },
+  {
+    "monotonic": 6651.372002241,
+    "npu_load": "NPU load:  Core0: 12%, Core1: 12%, Core2: 12%,",
+    "mem_available_kib": 1343300,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055510016
+  },
+  {
+    "monotonic": 6651.623854501,
+    "npu_load": "NPU load:  Core0:  7%, Core1:  7%, Core2:  7%,",
+    "mem_available_kib": 1343300,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055510016
+  },
+  {
+    "monotonic": 6651.875056569,
+    "npu_load": "NPU load:  Core0:  7%, Core1:  7%, Core2:  7%,",
+    "mem_available_kib": 1342484,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055813120
+  },
+  {
+    "monotonic": 6652.126157129,
+    "npu_load": "NPU load:  Core0:  7%, Core1:  7%, Core2:  7%,",
+    "mem_available_kib": 1342484,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055813120
+  },
+  {
+    "monotonic": 6652.378280059,
+    "npu_load": "NPU load:  Core0:  7%, Core1:  7%, Core2:  7%,",
+    "mem_available_kib": 1341776,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055813120
+  },
+  {
+    "monotonic": 6652.629449708,
+    "npu_load": "NPU load:  Core0: 10%, Core1: 10%, Core2: 10%,",
+    "mem_available_kib": 1341776,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055813120
+  },
+  {
+    "monotonic": 6652.880805437,
+    "npu_load": "NPU load:  Core0: 10%, Core1: 10%, Core2: 10%,",
+    "mem_available_kib": 1341776,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055550976
+  },
+  {
+    "monotonic": 6653.13328446,
+    "npu_load": "NPU load:  Core0: 10%, Core1: 10%, Core2: 10%,",
+    "mem_available_kib": 1341328,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055550976
+  },
+  {
+    "monotonic": 6653.384546266,
+    "npu_load": "NPU load:  Core0: 10%, Core1: 10%, Core2: 10%,",
+    "mem_available_kib": 1340436,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055563264
+  },
+  {
+    "monotonic": 6653.635679686,
+    "npu_load": "NPU load:  Core0: 25%, Core1: 26%, Core2: 25%,",
+    "mem_available_kib": 1340312,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055571456
+  },
+  {
+    "monotonic": 6653.886812508,
+    "npu_load": "NPU load:  Core0: 25%, Core1: 26%, Core2: 25%,",
+    "mem_available_kib": 1338556,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6056013824
+  },
+  {
+    "monotonic": 6654.138643341,
+    "npu_load": "NPU load:  Core0: 25%, Core1: 26%, Core2: 25%,",
+    "mem_available_kib": 1338556,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6056013824
+  },
+  {
+    "monotonic": 6654.390166442,
+    "npu_load": "NPU load:  Core0: 25%, Core1: 26%, Core2: 25%,",
+    "mem_available_kib": 1338368,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055571456
+  },
+  {
+    "monotonic": 6654.641931892,
+    "npu_load": "NPU load:  Core0: 60%, Core1: 32%, Core2: 32%,",
+    "mem_available_kib": 1338372,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055571456
+  },
+  {
+    "monotonic": 6654.893337094,
+    "npu_load": "NPU load:  Core0: 60%, Core1: 32%, Core2: 32%,",
+    "mem_available_kib": 1338644,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055571456
+  },
+  {
+    "monotonic": 6655.144477442,
+    "npu_load": "NPU load:  Core0: 60%, Core1: 32%, Core2: 32%,",
+    "mem_available_kib": 1338644,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055571456
+  },
+  {
+    "monotonic": 6655.39559358,
+    "npu_load": "NPU load:  Core0: 60%, Core1: 32%, Core2: 32%,",
+    "mem_available_kib": 1338644,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055571456
+  },
+  {
+    "monotonic": 6655.646763053,
+    "npu_load": "NPU load:  Core0: 89%, Core1: 22%, Core2: 22%,",
+    "mem_available_kib": 1338644,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055829504
+  },
+  {
+    "monotonic": 6655.898013602,
+    "npu_load": "NPU load:  Core0: 89%, Core1: 22%, Core2: 22%,",
+    "mem_available_kib": 1338644,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055567360
+  },
+  {
+    "monotonic": 6656.149256276,
+    "npu_load": "NPU load:  Core0: 89%, Core1: 22%, Core2: 22%,",
+    "mem_available_kib": 1338644,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055567360
+  },
+  {
+    "monotonic": 6656.400678631,
+    "npu_load": "NPU load:  Core0: 89%, Core1: 22%, Core2: 22%,",
+    "mem_available_kib": 1338692,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055567360
+  },
+  {
+    "monotonic": 6656.651763455,
+    "npu_load": "NPU load:  Core0:  9%, Core1:  9%, Core2:  9%,",
+    "mem_available_kib": 1338692,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055567360
+  },
+  {
+    "monotonic": 6656.903845844,
+    "npu_load": "NPU load:  Core0:  9%, Core1:  9%, Core2:  9%,",
+    "mem_available_kib": 1338368,
+    "swap_free_kib": 3612236,
+    "service_memory_bytes": 6055567360
+  },
+  {
+    "monotonic": 6657.155071252,
+    "npu_load": "NPU load:  Core0:  9%, Core1:  9%, Core2:  9%,",
+    "mem_available_kib": 1332940,
+    "swap_free_kib": 3611980,
+    "service_memory_bytes": 6050779136
+  },
+  {
+    "monotonic": 6657.406226363,
+    "npu_load": "NPU load:  Core0:  9%, Core1:  9%, Core2:  9%,",
+    "mem_available_kib": 1332076,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6657.657330382,
+    "npu_load": "NPU load:  Core0: 11%, Core1: 11%, Core2: 11%,",
+    "mem_available_kib": 1331856,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6657.908431474,
+    "npu_load": "NPU load:  Core0: 11%, Core1: 11%, Core2: 11%,",
+    "mem_available_kib": 1340788,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6658.159572528,
+    "npu_load": "NPU load:  Core0: 11%, Core1: 11%, Core2: 11%,",
+    "mem_available_kib": 1340580,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6658.410642411,
+    "npu_load": "NPU load:  Core0: 11%, Core1: 11%, Core2: 11%,",
+    "mem_available_kib": 1340580,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6658.661730621,
+    "npu_load": "NPU load:  Core0: 14%, Core1: 15%, Core2: 14%,",
+    "mem_available_kib": 1340328,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6658.913332196,
+    "npu_load": "NPU load:  Core0: 14%, Core1: 15%, Core2: 14%,",
+    "mem_available_kib": 1340328,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6659.164611163,
+    "npu_load": "NPU load:  Core0: 14%, Core1: 15%, Core2: 14%,",
+    "mem_available_kib": 1341640,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6659.416214779,
+    "npu_load": "NPU load:  Core0: 14%, Core1: 15%, Core2: 14%,",
+    "mem_available_kib": 1341844,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6659.667384898,
+    "npu_load": "NPU load:  Core0: 17%, Core1: 18%, Core2: 17%,",
+    "mem_available_kib": 1341844,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6041006080
+  },
+  {
+    "monotonic": 6659.918699687,
+    "npu_load": "NPU load:  Core0: 17%, Core1: 18%, Core2: 17%,",
+    "mem_available_kib": 1341844,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6660.169871258,
+    "npu_load": "NPU load:  Core0: 17%, Core1: 18%, Core2: 17%,",
+    "mem_available_kib": 1342632,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6660.422422806,
+    "npu_load": "NPU load:  Core0: 17%, Core1: 18%, Core2: 17%,",
+    "mem_available_kib": 1342184,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6660.673486111,
+    "npu_load": "NPU load:  Core0: 12%, Core1: 12%, Core2: 12%,",
+    "mem_available_kib": 1342484,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6660.924648293,
+    "npu_load": "NPU load:  Core0: 12%, Core1: 12%, Core2: 12%,",
+    "mem_available_kib": 1341788,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6661.175730844,
+    "npu_load": "NPU load:  Core0: 12%, Core1: 12%, Core2: 12%,",
+    "mem_available_kib": 1344060,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6661.430801647,
+    "npu_load": "NPU load:  Core0: 12%, Core1: 12%, Core2: 12%,",
+    "mem_available_kib": 1344156,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6661.682894263,
+    "npu_load": "NPU load:  Core0: 17%, Core1: 18%, Core2: 17%,",
+    "mem_available_kib": 1344156,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6661.934076226,
+    "npu_load": "NPU load:  Core0: 17%, Core1: 18%, Core2: 17%,",
+    "mem_available_kib": 1344156,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040485888
+  },
+  {
+    "monotonic": 6662.186780217,
+    "npu_load": "NPU load:  Core0: 17%, Core1: 18%, Core2: 17%,",
+    "mem_available_kib": 1343908,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040485888
+  },
+  {
+    "monotonic": 6662.438080313,
+    "npu_load": "NPU load:  Core0: 17%, Core1: 18%, Core2: 17%,",
+    "mem_available_kib": 1344376,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040485888
+  },
+  {
+    "monotonic": 6662.690046573,
+    "npu_load": "NPU load:  Core0: 17%, Core1: 18%, Core2: 17%,",
+    "mem_available_kib": 1344120,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040485888
+  },
+  {
+    "monotonic": 6662.941322988,
+    "npu_load": "NPU load:  Core0: 17%, Core1: 18%, Core2: 17%,",
+    "mem_available_kib": 1343420,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040485888
+  },
+  {
+    "monotonic": 6663.192459685,
+    "npu_load": "NPU load:  Core0: 17%, Core1: 18%, Core2: 17%,",
+    "mem_available_kib": 1343420,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040485888
+  },
+  {
+    "monotonic": 6663.443584131,
+    "npu_load": "NPU load:  Core0: 17%, Core1: 18%, Core2: 17%,",
+    "mem_available_kib": 1343176,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040485888
+  },
+  {
+    "monotonic": 6663.695144015,
+    "npu_load": "NPU load:  Core0: 18%, Core1: 19%, Core2: 18%,",
+    "mem_available_kib": 1343176,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040485888
+  },
+  {
+    "monotonic": 6663.946552511,
+    "npu_load": "NPU load:  Core0: 18%, Core1: 19%, Core2: 18%,",
+    "mem_available_kib": 1343176,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040485888
+  },
+  {
+    "monotonic": 6664.198351578,
+    "npu_load": "NPU load:  Core0: 18%, Core1: 19%, Core2: 18%,",
+    "mem_available_kib": 1343176,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040485888
+  },
+  {
+    "monotonic": 6664.449554726,
+    "npu_load": "NPU load:  Core0: 18%, Core1: 19%, Core2: 18%,",
+    "mem_available_kib": 1343180,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040748032
+  },
+  {
+    "monotonic": 6664.700662148,
+    "npu_load": "NPU load:  Core0: 16%, Core1: 17%, Core2: 16%,",
+    "mem_available_kib": 1343180,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6664.951736026,
+    "npu_load": "NPU load:  Core0: 16%, Core1: 17%, Core2: 16%,",
+    "mem_available_kib": 1343180,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6665.20285074,
+    "npu_load": "NPU load:  Core0: 16%, Core1: 17%, Core2: 16%,",
+    "mem_available_kib": 1343180,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6665.453948826,
+    "npu_load": "NPU load:  Core0: 16%, Core1: 17%, Core2: 16%,",
+    "mem_available_kib": 1342692,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6665.712476442,
+    "npu_load": "NPU load:  Core0:  7%, Core1:  6%, Core2:  6%,",
+    "mem_available_kib": 1342692,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040489984
+  },
+  {
+    "monotonic": 6665.96530827,
+    "npu_load": "NPU load:  Core0:  7%, Core1:  6%, Core2:  6%,",
+    "mem_available_kib": 1342440,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040514560
+  },
+  {
+    "monotonic": 6666.216506646,
+    "npu_load": "NPU load:  Core0:  7%, Core1:  6%, Core2:  6%,",
+    "mem_available_kib": 1342440,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040514560
+  },
+  {
+    "monotonic": 6666.467604385,
+    "npu_load": "NPU load:  Core0:  7%, Core1:  6%, Core2:  6%,",
+    "mem_available_kib": 1342820,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040514560
+  },
+  {
+    "monotonic": 6666.718695951,
+    "npu_load": "NPU load:  Core0: 21%, Core1: 23%, Core2: 22%,",
+    "mem_available_kib": 1342596,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040514560
+  },
+  {
+    "monotonic": 6666.969825145,
+    "npu_load": "NPU load:  Core0: 21%, Core1: 23%, Core2: 22%,",
+    "mem_available_kib": 1341924,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040514560
+  },
+  {
+    "monotonic": 6667.220938004,
+    "npu_load": "NPU load:  Core0: 21%, Core1: 23%, Core2: 22%,",
+    "mem_available_kib": 1341700,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040514560
+  },
+  {
+    "monotonic": 6667.472142156,
+    "npu_load": "NPU load:  Core0: 21%, Core1: 23%, Core2: 22%,",
+    "mem_available_kib": 1342548,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040772608
+  },
+  {
+    "monotonic": 6667.723313884,
+    "npu_load": "NPU load:  Core0: 17%, Core1: 17%, Core2: 16%,",
+    "mem_available_kib": 1342788,
+    "swap_free_kib": 3611724,
+    "service_memory_bytes": 6040780800
+  }
+]

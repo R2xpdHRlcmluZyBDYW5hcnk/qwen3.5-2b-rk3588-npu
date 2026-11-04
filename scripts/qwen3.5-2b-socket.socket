@@ -1,0 +1,11 @@
+[Unit]
+Description=Qwen3.5-2B local Unix socket
+
+[Socket]
+ListenStream=/run/qwen3.5-2b/inference.sock
+SocketMode=0600
+DirectoryMode=0700
+RemoveOnStop=yes
+
+[Install]
+WantedBy=sockets.target
