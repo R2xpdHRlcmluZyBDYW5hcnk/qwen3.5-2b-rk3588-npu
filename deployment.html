@@ -65,7 +65,8 @@ systemctl enable qwen3.5-2b.service qwen3.5-2b-socket.socket</code></pre>
 <h3>思考与增量正文</h3><p>固定版本已经支持 <code>enable_thinking:true</code> 和 <code>stream:true</code>，无需改动服务单元。SSE 中 <code>delta.content</code> 为正文，<code>delta.reasoning_content</code> 为私有推理频道。面向用户的客户端丢弃私有频道，可显示证据读取、查询状态和简短依据摘要作为分析进度。</p>
 <pre><code class="bash">python scripts/stream_chat.py '请简要说明如何核对一条网络连接的可见元数据。'
 python -B scripts/test_stream_chat.py</code></pre><p>该标准库客户端通过本地 Unix Socket 逐段输出正文，默认开启思考，不保存会话。Ctrl+C 关闭当前流并触发已有的断线取消，不调用全局中断接口。</p>
-<p>服务单元使用 <code>--timeout 0</code> 关闭流式无输出超时。生成流持续到完成、模型报错或客户端断开，参考客户端只限制连接建立时间。上下文仍为 2048，原生生成额度由服务根据 <code>max_tokens</code> 扩展，较长思考可能留下较少正文空间。非关闭的 <code>reasoning_effort</code> 统一开启思考，当前版本没有 low / medium 档位差异或云端 <code>thinking_budget</code>。下文性能记录仍对应关闭思考的验收请求。</p>
+<p>服务单元使用 <code>--timeout 0</code> 关闭流式无输出超时。生成流持续到完成、模型报错或客户端断开，参考客户端只限制连接建立时间。默认上下文为 2048，原生生成额度由服务根据 <code>max_tokens</code> 扩展，较长思考可能留下较少正文空间。非关闭的 <code>reasoning_effort</code> 统一开启思考，当前版本没有 low / medium 档位差异或云端 <code>thinking_budget</code>。下文性能记录仍对应关闭思考的验收请求。</p>
+<p>已有部署可在 <code>/opt/qwen3.5-2b/model.env</code> 设置 <code>QWEN_RKLLM_MODEL</code> 和 <code>QWEN_CONTEXT_LENGTH</code>。上下文长度以模型加载日志的 <code>max_context_limit</code> 与实测内存余量为依据。重启后检查模型健康、推理期间的内存峰值和 OOM 计数。</p>
 <p>参数核对于 2026-11-05，来源为 <a href="https://huggingface.co/Qwen/Qwen3.5-2B/blob/15852e8c16360a2fea060d615a32b45270f8a8fc/README.md">Qwen 官方模型卡</a>、<a href="https://www.alibabacloud.com/help/en/model-studio/qwen-api-via-openai-chat-completions">阿里云接口说明</a>及本教程固定版本的服务源码；云端模型的档位范围不等同于本地实现。</p>
 <h3>图片问答</h3><p>在目标板保存自己的测试图片，以下生成 data URL 请求并通过 Socket 调用：</p><pre><code class="bash">python3 - &lt;&lt;&#x27;PY&#x27; &gt; /var/tmp/qwen35-image-request.json
 import base64, json
@@ -689,8 +690,11 @@ WorkingDirectory=/opt/qwen3.5-2b
 Environment=RKLLM_LOG_LEVEL=1
 Environment=OMP_NUM_THREADS=2
 Environment=OPENBLAS_NUM_THREADS=2
+Environment=QWEN_RKLLM_MODEL=/opt/qwen3.5-2b/models/qwen3.5-2b_fp16_rk3588.rkllm
+Environment=QWEN_CONTEXT_LENGTH=2048
+EnvironmentFile=-/opt/qwen3.5-2b/model.env
 UMask=0077
-ExecStart=/opt/qwen3.5-2b/api-venv/bin/qwen3.5-2b /opt/qwen3.5-2b/src/app/fastapi_server_vlm.py --encoder_model /opt/qwen3.5-2b/models/qwen3.5_vision_rk3588.rknn --llm_model /opt/qwen3.5-2b/models/qwen3.5-2b_fp16_rk3588.rkllm --model_name Qwen3.5-2B --target_platform rk3588 --host 127.0.0.1 --port 18080 --max_context_len 2048 --embed_flash 1 --default_max_tokens 256 --default_temperature 0.1 --max_concurrent 1 --timeout 0 --rknn_core_num 3
+ExecStart=/opt/qwen3.5-2b/api-venv/bin/qwen3.5-2b /opt/qwen3.5-2b/src/app/fastapi_server_vlm.py --encoder_model /opt/qwen3.5-2b/models/qwen3.5_vision_rk3588.rknn --llm_model ${QWEN_RKLLM_MODEL} --model_name Qwen3.5-2B --target_platform rk3588 --host 127.0.0.1 --port 18080 --max_context_len ${QWEN_CONTEXT_LENGTH} --embed_flash 1 --default_max_tokens 256 --default_temperature 0.1 --max_concurrent 1 --timeout 0 --rknn_core_num 3
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=45

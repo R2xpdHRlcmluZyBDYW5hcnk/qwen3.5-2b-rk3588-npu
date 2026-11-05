@@ -11,6 +11,11 @@ if [[ $# -gt 2 || ( "$precision" != fp16 && "$precision" != w8a8 ) ||
 fi
 language_model="qwen3.5-2b_${precision}_rk3588.rkllm"
 vision_model=qwen3.5_vision_rk3588.rknn
+context_length=${QWEN_CONTEXT_LENGTH:-2048}
+if ! [[ "$context_length" =~ ^[1-9][0-9]{2,3}$ ]] || (( context_length < 512 || context_length > 4096 )); then
+  printf 'QWEN_CONTEXT_LENGTH must be an integer from 512 to 4096\n' >&2
+  exit 2
+fi
 test "$(id -u)" = 0
 test "$(uname -m)" = aarch64
 test -r /sys/kernel/debug/rknpu/version
@@ -85,7 +90,7 @@ if [[ "$mode" != --reuse-runtime ]]; then
   install -m 644 "$SCRIPT_DIR/verify_api.py" "$SCRIPT_DIR/verify_management.py" bin/
 fi
 model_env=$(mktemp "$DEPLOY_DIR/model.env.XXXXXX")
-printf 'QWEN_RKLLM_MODEL=%s/models/%s\n' "$DEPLOY_DIR" "$language_model" > "$model_env"
+printf 'QWEN_RKLLM_MODEL=%s/models/%s\nQWEN_CONTEXT_LENGTH=%s\n' "$DEPLOY_DIR" "$language_model" "$context_length" > "$model_env"
 chmod 644 "$model_env"
 mv -fT "$model_env" "$DEPLOY_DIR/model.env"
 systemd-analyze verify /etc/systemd/system/qwen3.5-2b.service /etc/systemd/system/qwen3.5-2b-socket.service /etc/systemd/system/qwen3.5-2b-socket.socket

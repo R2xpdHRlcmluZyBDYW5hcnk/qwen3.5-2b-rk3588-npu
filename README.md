@@ -7,7 +7,7 @@
 - [转换与安装脚本](scripts/)；[测量和验证记录](evidence/)；[来源版本](SOURCES.md)。
 - `qwen3.5-2b.service`，主进程名 `qwen3.5-2b`，DynamicUser；NPU 权限使用 render 与 video 组。
 - 仅监听 `127.0.0.1:18080`，另提供 `/run/qwen3.5-2b/inference.sock`（0600）。
-- 单并发、服务上下文 2048、448×448 单图输入、systemd MemoryMax=6G。
+- 单并发、默认服务上下文 2048、448×448 单图输入、systemd MemoryMax=6G。
 - 无状态：每个请求传完整 `messages`；请求前后清 KV，不保留服务端会话历史、不做跨请求缓存复用。
 - 管理接口：`POST /v1/abort`、`POST /v1/cache/clear`；忙碌清缓存返回 409。支持 SSE，流式客户端断开会取消工作线程。
 
@@ -72,7 +72,17 @@ python scripts/stream_chat.py '请简要说明如何核对一条网络连接的�
 python -B scripts/test_stream_chat.py
 ```
 
-服务单元使用 `--timeout 0` 关闭生成期间的无输出超时，流保持到生成完成、模型报错或客户端断开。参考客户端只限制连接建立时间，连接后等待 SSE。上下文仍为 2048，原生生成额度由服务根据 `max_tokens` 扩展，较长思考可能留下较少正文空间。固定版本将非关闭的 `reasoning_effort` 值统一映射为开启思考，没有 low / medium 的不同强度，也没有云端 `thinking_budget` 的自动切换语义。既有验收数据来自关闭思考的请求。
+服务单元使用 `--timeout 0` 关闭生成期间的无输出超时，流保持到生成完成、模型报错或客户端断开。参考客户端只限制连接建立时间，连接后等待 SSE。原生生成额度由服务根据 `max_tokens` 扩展，较长思考可能留下较少正文空间。固定版本将非关闭的 `reasoning_effort` 值统一映射为开启思考，没有 low / medium 的不同强度，也没有云端 `thinking_budget` 的自动切换语义。既有验收数据来自关闭思考的请求。
+
+## 模型与上下文设置
+
+原始 Qwen3.5-2B 的原生上下文为 262,144 token。本仓库的 FP16 和 W8A8 导出参数均为 `max_context=4096`，已导出的 RKLLM 文件以内嵌上限为准。默认服务上下文为 2048。已有 W8A8 模型与运行时、且实测有内存余量时，可启用 4096。 [Qwen 官方模型卡](https://huggingface.co/Qwen/Qwen3.5-2B/blob/15852e8c16360a2fea060d615a32b45270f8a8fc/README.md)
+
+```bash
+QWEN_CONTEXT_LENGTH=4096 bash /var/tmp/qwen35-repro/scripts/install_board.sh w8a8 --reuse-runtime
+```
+
+安装脚本将模型路径和上下文写入 `/opt/qwen3.5-2b/model.env`。已有部署可直接修改其中的 `QWEN_CONTEXT_LENGTH`，重启模型后检查健康接口、加载日志、推理期间的 `MemAvailable`、服务 `MemoryPeak` 和 OOM 计数。客户端的 `max_tokens` 是独立参数。当前服务对 Qwen 使用 `min(4096, max_tokens + max(512, 2 * max_tokens))` 作为原生生成额度。输入、聊天模板和生成额度共同占用上下文。
 
 ## 验证与限制
 
