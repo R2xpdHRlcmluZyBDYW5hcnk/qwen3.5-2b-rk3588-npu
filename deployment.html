@@ -61,7 +61,12 @@ systemctl enable qwen3.5-2b.service qwen3.5-2b-socket.socket</code></pre>
 <p>确认 DynamicUser=yes、UID 非 0、进程名正确、NRestarts 没有异常增加。实际已部署实例已完成验证并启用自启动。</p></section><section id="api"><h2>5. 本地问答、中断与清缓存</h2>
 <p>接口是 Unix Socket 上的 HTTP，兼容常用的 OpenAI Chat Completions 请求格式，不是 gRPC。无需开启外部监听。Socket 为 root 可访问的 0600，服务自身以动态用户运行；调用者权限与模型进程权限是两件事。</p>
 <h3>文本问答</h3><pre><code class="bash">curl --fail-with-body --unix-socket /run/qwen3.5-2b/inference.sock   http://localhost/v1/chat/completions   -H &#x27;Content-Type: application/json&#x27;   -d &#x27;{&quot;model&quot;:&quot;Qwen3.5-2B&quot;,&quot;messages&quot;:[{&quot;role&quot;:&quot;user&quot;,&quot;content&quot;:&quot;请简要介绍太阳系。&quot;}],&quot;enable_thinking&quot;:false,&quot;max_tokens&quot;:128,&quot;stream&quot;:false}&#x27;</code></pre>
-<p>流式输出把 <code>stream</code> 改为 true，并给 curl 添加 <code>-N</code>。建议每次显式传入 <code>max_tokens</code> 和 <code>enable_thinking:false</code>。上游的 token 用量是估算值，而且含思考预算扩展逻辑；不能把该接口当作完整的 OpenAI 服务实现。</p>
+<p>流式输出把 <code>stream</code> 改为 true，并给 curl 添加 <code>-N</code>。每次显式传入 <code>max_tokens</code> 和 <code>enable_thinking</code>；需要思考时设为 true。上游的 token 用量是估算值，而且含原生生成额度扩展逻辑；不能把该接口当作完整的 OpenAI 服务实现。</p>
+<h3>思考与增量正文</h3><p>固定版本已经支持 <code>enable_thinking:true</code> 和 <code>stream:true</code>，无需改动服务单元。SSE 中 <code>delta.content</code> 为正文，<code>delta.reasoning_content</code> 为私有推理频道。面向用户的客户端丢弃私有频道，可显示证据读取、查询状态和简短依据摘要作为分析进度。</p>
+<pre><code class="bash">python scripts/stream_chat.py '请简要说明如何核对一条网络连接的可见元数据。'
+python -B scripts/test_stream_chat.py</code></pre><p>该标准库客户端通过本地 Unix Socket 逐段输出正文，默认开启思考，不保存会话。Ctrl+C 关闭当前流并触发已有的断线取消，不调用全局中断接口。</p>
+<p>此服务没有 low / medium 的原生强度差异；非关闭的 <code>reasoning_effort</code> 都只是开启思考，也没有云端 <code>thinking_budget</code> 的自动切换语义。<code>max_tokens</code> 会被扩展，不能当作严格总额度。上下文仍为 2048，客户端应限制输入、接收长度和请求期限；较长思考可能留下较少正文空间。下文性能记录仍对应关闭思考的验收请求。</p>
+<p>参数核对于 2026-11-05，来源为 <a href="https://huggingface.co/Qwen/Qwen3.5-2B/blob/15852e8c16360a2fea060d615a32b45270f8a8fc/README.md">Qwen 官方模型卡</a>、<a href="https://www.alibabacloud.com/help/en/model-studio/qwen-api-via-openai-chat-completions">阿里云接口说明</a>及本教程固定版本的服务源码；云端模型的档位范围不等同于本地实现。</p>
 <h3>图片问答</h3><p>在目标板保存自己的测试图片，以下生成 data URL 请求并通过 Socket 调用：</p><pre><code class="bash">python3 - &lt;&lt;&#x27;PY&#x27; &gt; /var/tmp/qwen35-image-request.json
 import base64, json
 from pathlib import Path
@@ -994,4 +999,130 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.</code></pre></details></section></main></body></html>
+SOFTWARE.</code></pre></details><details><summary>scripts/stream_chat.py</summary><pre><code class="python">&quot;&quot;&quot;Small SSE text client. Private reasoning is discarded, never printed or saved.&quot;&quot;&quot;
+import argparse
+import http.client
+import json
+import socket
+import sys
+import threading
+import time
+
+
+class UnixConnection(http.client.HTTPConnection):
+    def connect(self):
+        self.sock=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
+        self.sock.settimeout(self.timeout)
+        self.sock.connect(self.host)
+        self.transport=self.sock
+
+
+def interrupt(connection):
+    sock=getattr(connection,&#x27;transport&#x27;,None)
+    if sock is not None:
+        try:sock.shutdown(socket.SHUT_RDWR)
+        except OSError:pass
+
+
+def content_events(response, deadline):
+    &quot;&quot;&quot;Read bounded OpenAI-style SSE records, including multiline data fields.&quot;&quot;&quot;
+    data=[];size=0;received=0
+    while time.monotonic()&lt;deadline:
+        line=response.readline(32769)
+        if len(line)&gt;32768:raise ValueError(&#x27;SSE line exceeds limit&#x27;)
+        if not line:raise ValueError(&#x27;Incomplete SSE response&#x27;)
+        if line.strip():
+            if line.startswith(b&#x27;data:&#x27;):
+                size+=len(line)
+                if size&gt;65536:raise ValueError(&#x27;SSE event exceeds limit&#x27;)
+                data.append(line[5:].strip())
+            continue
+        if not data:continue
+        raw=b&#x27;\n&#x27;.join(data);data=[];size=0
+        if raw==b&#x27;[DONE]&#x27;:return
+        message=json.loads(raw)
+        if message.get(&#x27;error&#x27;):raise ValueError(&#x27;Model service returned an error&#x27;)
+        for choice in message.get(&#x27;choices&#x27;,[]):
+            delta=choice.get(&#x27;delta&#x27;) or {}
+            if any(value is not None and not isinstance(value,str) for value in
+                   (delta.get(&#x27;content&#x27;),delta.get(&#x27;reasoning_content&#x27;))):
+                raise ValueError(&#x27;Invalid text delta&#x27;)
+            # Count private output for resource limits without retaining it.
+            received+=len(delta.get(&#x27;content&#x27;) or &#x27;&#x27;)+len(delta.get(&#x27;reasoning_content&#x27;) or &#x27;&#x27;)
+            if received&gt;32768:raise ValueError(&#x27;Generation exceeds limit&#x27;)
+            value=delta.get(&#x27;content&#x27;)
+            if value:
+                if not isinstance(value,str):raise ValueError(&#x27;Invalid content delta&#x27;)
+                yield value
+    raise TimeoutError(&#x27;Generation deadline reached&#x27;)
+
+
+def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(&#x27;prompt&#x27;)
+    parser.add_argument(&#x27;--unix-socket&#x27;,default=&#x27;/run/qwen3.5-2b/inference.sock&#x27;)
+    parser.add_argument(&#x27;--no-thinking&#x27;,action=&#x27;store_true&#x27;)
+    args=parser.parse_args()
+    payload=dict(model=&#x27;Qwen3.5-2B&#x27;,messages=[dict(role=&#x27;user&#x27;,content=args.prompt)],
+                 enable_thinking=not args.no_thinking,stream=True,max_tokens=256,
+                 temperature=0.6,top_p=0.95,top_k=20,presence_penalty=0.0,repeat_penalty=1.0)
+    connection=UnixConnection(args.unix_socket,timeout=180)
+    response=None
+    deadline=time.monotonic()+180
+    watchdog=threading.Timer(180,interrupt,args=(connection,));watchdog.daemon=True;watchdog.start()
+    try:
+        connection.request(&#x27;POST&#x27;,&#x27;/v1/chat/completions&#x27;,json.dumps(payload).encode(&#x27;utf-8&#x27;),{&#x27;Content-Type&#x27;:&#x27;application/json&#x27;})
+        response=connection.getresponse()
+        if response.status!=200:raise RuntimeError(&#x27;Model HTTP status &#x27;+str(response.status))
+        for value in content_events(response,deadline):
+            sys.stdout.write(value);sys.stdout.flush()
+        print()
+    finally:
+        watchdog.cancel()
+        if response is not None:response.close()
+        connection.close()  # Interrupting this client cancels this stream only.
+
+
+if __name__==&#x27;__main__&#x27;:
+    try:main()
+    except KeyboardInterrupt:raise SystemExit(130)
+    except (OSError,ValueError,RuntimeError,TimeoutError) as exc:
+        print(str(exc),file=sys.stderr);raise SystemExit(1)
+</code></pre></details><details><summary>scripts/test_stream_chat.py</summary><pre><code class="python">import io
+import json
+import time
+import socket
+from types import SimpleNamespace
+import unittest
+from stream_chat import content_events,interrupt
+
+
+def event(delta):
+    return b&#x27;data: &#x27;+json.dumps({&#x27;choices&#x27;:[{&#x27;delta&#x27;:delta}]},ensure_ascii=False).encode()+b&#x27;\n\n&#x27;
+
+
+class StreamTests(unittest.TestCase):
+    def test_public_content_is_incremental_and_private_channel_is_omitted(self):
+        source=io.BytesIO(event({&#x27;reasoning_content&#x27;:&#x27;PRIVATE_SENTINEL&#x27;})+event({&#x27;content&#x27;:&#x27;正&#x27;})+event({&#x27;content&#x27;:&#x27;文&#x27;})+b&#x27;data: [DONE]\n\n&#x27;)
+        chunks=content_events(source,time.monotonic()+1)
+        self.assertEqual(next(chunks),&#x27;正&#x27;);self.assertEqual(next(chunks),&#x27;文&#x27;)
+        self.assertEqual(list(chunks),[])
+
+    def test_truncation_and_unbounded_records_fail(self):
+        for data in (event({&#x27;content&#x27;:&#x27;partial&#x27;}),b&#x27;data: &#x27;+b&#x27;x&#x27;*32769+b&#x27;\n\n&#x27;,event({&#x27;reasoning_content&#x27;:&#x27;x&#x27;*32769})):
+            with self.subTest(size=len(data)),self.assertRaises(ValueError):
+                list(content_events(io.BytesIO(data),time.monotonic()+1))
+
+    def test_deadline_is_enforced(self):
+        with self.assertRaises(TimeoutError):list(content_events(io.BytesIO(),time.monotonic()-1))
+
+    def test_interrupt_shuts_down_transport_even_after_http_detaches_socket(self):
+        left,right=socket.socketpair()
+        try:
+            interrupt(SimpleNamespace(sock=None,transport=left))
+            right.settimeout(.1);self.assertEqual(right.recv(1),b&#x27;&#x27;)
+        finally:left.close();right.close()
+
+
+if __name__==&#x27;__main__&#x27;:unittest.main()
+</code></pre></details></section></main></body></html>

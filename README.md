@@ -43,6 +43,19 @@ curl --fail-with-body --unix-socket /run/qwen3.5-2b/inference.sock \
 
 图片调用、SSE、中断、清理和完全停止服务的方法见完整教程。只做问答，不提供 Agent 或工具执行能力；接口不是 gRPC。OpenAI 请求格式兼容范围及 token 估算行为以本教程说明为准。
 
+## 思考与增量正文
+
+调用方可显式传入 `enable_thinking:true` 与 `stream:true`。服务已支持这两个开关，无需修改服务单元或重启模型。SSE 的 `delta.content` 是正文，`delta.reasoning_content` 是私有推理频道；面向用户的客户端应丢弃后者，以证据读取、查询状态或简短依据摘要展示分析进度。
+
+随仓库提供的 [流式文本客户端](scripts/stream_chat.py) 使用 Python 标准库和本地 Unix Socket，默认启用思考，只增量输出正文。按 Ctrl+C 会关闭当前流，沿用服务已有的断线取消；不会调用影响其他请求的全局中断接口。客户端不保存提示词、回答或会话历史。
+
+```bash
+python scripts/stream_chat.py '请简要说明如何核对一条网络连接的可见元数据。'
+python -B scripts/test_stream_chat.py
+```
+
+当前固定版本的服务把非关闭的 `reasoning_effort` 值统一映射为开启思考，没有实现 low / medium 的不同强度，也没有云端 `thinking_budget` 的自动切换语义。不要把这些参数当作已经生效的原生档位。`max_tokens` 还会被服务扩展为原生生成额度，不能解释为严格的总 token 上限。上下文仍为 2048，调用方须限制输入、响应长度和整个请求的期限；较长思考可能留下较少正文空间。既有验收数据来自关闭思考的请求，不代表开启思考后的性能。
+
 ## 验证与限制
 
 功能记录来自 2026-11-04 的一次实际部署：文本、A/B/A 图像切换、中断后继续问答、SSE 断开及错误后的清理均通过；三个 NPU 核心观测到工作；无自动重启及 cgroup OOM kill。不是生产稳定性保证，也未做长期压力测试或该模型 ONNX/NPU 数值一致性验证。

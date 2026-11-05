@@ -18,6 +18,12 @@
 4. 通过 `gh repo view --json licenseInfo` 和 `gh api repos/.../contents` 检查服务端仓库许可证：API 返回 `licenseInfo: null`，根目录没有 LICENSE；固定版本源码也没有许可证声明。不能推断它采用 MIT 或其他开源许可。
 5. 通过 `gh api repos/airockchip/.../contents/LICENSE?ref=...` 检查上述固定 SDK 版本的许可证。RKLLM 的许可证包含再分发条件及第三方声明；RKNN 使用专门 SDK 协议。
 
+## 思考与流式参数补查
+
+2026-11-05，MCP Search Service。查询前复用上述固定版本与接口记录，补读 [Qwen3.5-2B 模型卡](https://huggingface.co/Qwen/Qwen3.5-2B/blob/15852e8c16360a2fea060d615a32b45270f8a8fc/README.md)、[阿里云 Chat Completions 参数](https://www.alibabacloud.com/help/en/model-studio/qwen-api-via-openai-chat-completions) 与 [深度思考说明](https://www.alibabacloud.com/help/en/model-studio/deep-thinking)。查询条件为 enable_thinking、reasoning_effort、thinking_budget、流式 reasoning_content / content 及模型支持范围。结果：2B 模型支持显式启用思考；云端档位和预算的适用范围不能直接套用到本地 RKLLM。
+
+本地核对 `apply_local_changes.py` 结果散列对应的服务源码：enable_thinking 为布尔开关；非关闭的 reasoning_effort 统一进入思考模式，没有档位差异；无 thinking_budget；SSE 分开输出私有推理与正文；Qwen 的 max_tokens 会扩展为原生生成额度。新增客户端只使用已支持的接口，不更改或分发第三方服务端源码。上述核查不新增板端性能测量。
+
 ## 发布边界
 
 本仓库仅分发自行编写的教程、服务配置、转换/安装/验证脚本及本地新增代码，使用 MIT。没有收录第三方服务端源码、含上游源码上下文的差异补丁、模型、SDK、运行库或示例图片。安装脚本从原作者固定版本获取依赖；`apply_local_changes.py` 仅存储本地新增内容和数值编辑范围，并校验原始源码与结果散列。它不向使用者授予上游服务端的使用、修改或再分发许可。需要这些权限时，应向原作者确认；没有明确许可的上游不能作为可自由再分发的软件打包。
