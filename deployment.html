@@ -65,7 +65,7 @@ systemctl enable qwen3.5-2b.service qwen3.5-2b-socket.socket</code></pre>
 <h3>思考与增量正文</h3><p>固定版本已经支持 <code>enable_thinking:true</code> 和 <code>stream:true</code>，无需改动服务单元。SSE 中 <code>delta.content</code> 为正文，<code>delta.reasoning_content</code> 为私有推理频道。面向用户的客户端丢弃私有频道，可显示证据读取、查询状态和简短依据摘要作为分析进度。</p>
 <pre><code class="bash">python scripts/stream_chat.py '请简要说明如何核对一条网络连接的可见元数据。'
 python -B scripts/test_stream_chat.py</code></pre><p>该标准库客户端通过本地 Unix Socket 逐段输出正文，默认开启思考，不保存会话。Ctrl+C 关闭当前流并触发已有的断线取消，不调用全局中断接口。</p>
-<p>此服务没有 low / medium 的原生强度差异；非关闭的 <code>reasoning_effort</code> 都只是开启思考，也没有云端 <code>thinking_budget</code> 的自动切换语义。<code>max_tokens</code> 会被扩展，不能当作严格总额度。上下文仍为 2048，客户端应限制输入、接收长度和请求期限；较长思考可能留下较少正文空间。下文性能记录仍对应关闭思考的验收请求。</p>
+<p>服务单元使用 <code>--timeout 0</code> 关闭流式无输出超时。生成流持续到完成、模型报错或客户端断开，参考客户端只限制连接建立时间。上下文仍为 2048，原生生成额度由服务根据 <code>max_tokens</code> 扩展，较长思考可能留下较少正文空间。非关闭的 <code>reasoning_effort</code> 统一开启思考，当前版本没有 low / medium 档位差异或云端 <code>thinking_budget</code>。下文性能记录仍对应关闭思考的验收请求。</p>
 <p>参数核对于 2026-11-05，来源为 <a href="https://huggingface.co/Qwen/Qwen3.5-2B/blob/15852e8c16360a2fea060d615a32b45270f8a8fc/README.md">Qwen 官方模型卡</a>、<a href="https://www.alibabacloud.com/help/en/model-studio/qwen-api-via-openai-chat-completions">阿里云接口说明</a>及本教程固定版本的服务源码；云端模型的档位范围不等同于本地实现。</p>
 <h3>图片问答</h3><p>在目标板保存自己的测试图片，以下生成 data URL 请求并通过 Socket 调用：</p><pre><code class="bash">python3 - &lt;&lt;&#x27;PY&#x27; &gt; /var/tmp/qwen35-image-request.json
 import base64, json
@@ -358,7 +358,8 @@ import sys
 from pathlib import Path
 
 SOURCE_SHA256 = &quot;df046479b373c59a194f21632585b3b6e4f1789e02db82199e743326553dc255&quot;
-RESULT_SHA256 = &#x27;ef1e519fad3608d57415aefcb0f28914f5d3a08c1863a06945ad5db2e5ba84a2&#x27;
+LIFECYCLE_SHA256 = &#x27;ef1e519fad3608d57415aefcb0f28914f5d3a08c1863a06945ad5db2e5ba84a2&#x27;
+RESULT_SHA256 = &#x27;f84c72587a9a5eaf969c951a6fb2215ca09579f0bd03c2bbad10efd4208799e5&#x27;
 EDITS = [(881, 881, &#x27;        self.cancel_requested = threading.Event()\n&#x27;), (928, 928, &#x27;        self.control_lock = threading.Lock()\n        self.active_request_id = None\n        self.last_cache_positions = None\n&#x27;), (1009, 1009, &#x27;        self.lib.rkllm_abort.argtypes = [ctypes.c_void_p]\n        self.lib.rkllm_abort.restype = ctypes.c_int\n        self.lib.rkllm_is_running.argtypes = [ctypes.c_void_p]\n        self.lib.rkllm_is_running.restype = ctypes.c_int\n        self.lib.rkllm_get_kv_cache_size.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_int)]\n        self.lib.rkllm_get_kv_cache_size.restype = ctypes.c_int\n&#x27;), (1024, 1025, &#x27;&#x27;), (1027, 1028, &#x27;&#x27;), (1112, 1115, &#x27;            try:\n                self.clear_cache()\n                if not state.cancel_requested.is_set():\n                    with self.control_lock:\n                        self.active_request_id = request_id\n                    ret = self.lib.rkllm_run(\n                        self.handle,\n                        ctypes.byref(input_data),\n                        ctypes.byref(infer_params),\n                        ctypes.cast(request_id_buffer, ctypes.c_void_p),\n                    )\n                    if state.cancel_requested.is_set():\n                        state.error = None\n                        state.finish_reason = &quot;stop&quot;\n                    elif ret != 0 and not state.error:\n                        state.error = f&quot;rkllm_run failed with code {ret}&quot;\n            finally:\n                with self.control_lock:\n                    self.active_request_id = None\n                # Clear after success, native error, or cancellation, before\n                # advertising completion or releasing the inference slot.\n                try:\n                    self.clear_cache()\n                except Exception as error:\n                    state.error = str(error)\n&#x27;), (1116, 1126, &#x27;&#x27;), (1127, 1127, &#x27;\n    def clear_cache(self) -&gt; int:\n        ret = self.lib.rkllm_clear_kv_cache(self.handle, 0, None, None)\n        if ret != 0:\n            raise RuntimeError(f&quot;rkllm_clear_kv_cache failed with code {ret}&quot;)\n        positions = ctypes.c_int(-1)  # This deployment uses one batch.\n        ret = self.lib.rkllm_get_kv_cache_size(self.handle, ctypes.byref(positions))\n        if ret != 0 or positions.value != 0:\n            raise RuntimeError(f&quot;KV cache verification failed: ret={ret}, positions={positions.value}&quot;)\n        self.last_cache_positions = positions.value\n        return positions.value\n\n    def cancel(self, request_id: str, state: InferenceState) -&gt; dict:\n        state.cancel_requested.set()\n        deadline = time.monotonic() + 10\n        abort_code = None\n        while not state.completed.is_set() and time.monotonic() &lt; deadline:\n            with self.control_lock:\n                if self.active_request_id == request_id:\n                    abort_code = self.lib.rkllm_abort(self.handle)\n                    if abort_code != 0:\n                        raise RuntimeError(f&quot;rkllm_abort failed with code {abort_code}&quot;)\n            # Also cover cancellation in the small interval between assigning\n            # the active request and entering the native rkllm_run call.\n            state.completed.wait(0.01)\n        return {&quot;request_id&quot;: request_id, &quot;abort_code&quot;: abort_code,\n                &quot;status&quot;: &quot;cancelled&quot; if state.completed.is_set() else &quot;cancelling&quot;}\n&#x27;), (1371, 1371, &#x27;def finish_request(request_id: str, future) -&gt; None:\n    &quot;&quot;&quot;Keep the slot and callback state alive until the worker has stopped.&quot;&quot;&quot;\n    state = request_states.get(request_id)\n    if state and not state.completed.is_set():\n        state.cancel_requested.set()\n        executor.submit(runtime.llm.cancel, request_id, state)\n\n    def cleanup(_):\n        request_states.pop(request_id, None)\n        release_request_slot()\n\n    future.add_done_callback(cleanup)\n\n\n&#x27;), (1404, 1404, &#x27;    future = None\n&#x27;), (1414, 1415, &#x27;        future = executor.submit(\n&#x27;), (1478, 1480, &#x27;        if future is not None:\n            finish_request(request_id, future)\n        else:\n            request_states.pop(request_id, None)\n            release_request_slot()\n&#x27;), (1523, 1523, &#x27;        for request_id, state in list(request_states.items()):\n            await asyncio.to_thread(runtime.llm.cancel, request_id, state)\n        if executor:\n            await asyncio.to_thread(executor.shutdown, wait=True)\n&#x27;), (1524, 1526, &#x27;&#x27;), (1578, 1578, &#x27;        &quot;conversation_history&quot;: &quot;client_managed&quot;,\n        &quot;kv_policy&quot;: &quot;clear_before_and_after_each_request&quot;,\n        &quot;last_cleared_kv_positions&quot;: runtime.llm.last_cache_positions if runtime else None,\n&#x27;), (1579, 1579, &#x27;\n\n@app.post(&quot;/v1/abort&quot;)\nasync def abort_generation():\n    if runtime is None:\n        raise HTTPException(status_code=503, detail=&quot;VLM runtime is not initialized&quot;)\n    targets = [(key, value) for key, value in list(request_states.items())\n               if not value.completed.is_set()]\n    for _, state in targets:\n        state.cancel_requested.set()\n    results = [await asyncio.to_thread(runtime.llm.cancel, key, state)\n               for key, state in targets]\n    return {&quot;status&quot;: &quot;idle&quot; if not results else &quot;abort_requested&quot;, &quot;requests&quot;: results}\n\n\n@app.post(&quot;/v1/cache/clear&quot;)\nasync def clear_conversation_cache():\n    if runtime is None:\n        raise HTTPException(status_code=503, detail=&quot;VLM runtime is not initialized&quot;)\n    if active_requests or not runtime.llm.lock.acquire(blocking=False):\n        raise HTTPException(status_code=409, detail=&quot;Inference busy; abort and wait for idle first&quot;)\n    try:\n        return {&quot;status&quot;: &quot;cleared&quot;, &quot;kv_positions&quot;: runtime.llm.clear_cache()}\n    finally:\n        runtime.llm.lock.release()\n&#x27;), (1649, 1652, &#x27;    future = executor.submit(\n&#x27;), (1669, 1670, &#x27;    )\n    try:\n        state = await asyncio.shield(asyncio.wrap_future(future))\n&#x27;), (1704, 1706, &#x27;        finish_request(request_id, future)\n&#x27;)]
 
 def apply(path):
@@ -367,13 +368,25 @@ def apply(path):
     if digest == RESULT_SHA256:
         print(&#x27;Local changes already applied&#x27;)
         return
-    if digest != SOURCE_SHA256:
+    if digest == SOURCE_SHA256:
+        lines = data.decode(&#x27;utf-8&#x27;).splitlines(keepends=True)
+        for start, stop, addition in reversed(EDITS):
+            lines[start:stop] = [addition]
+        data = &#x27;&#x27;.join(lines).encode(&#x27;utf-8&#x27;)
+    if hashlib.sha256(data).hexdigest() != LIFECYCLE_SHA256:
         raise SystemExit(&#x27;Unexpected upstream version; refusing to change it&#x27;)
     lines = data.decode(&#x27;utf-8&#x27;).splitlines(keepends=True)
-    for start, stop, addition in reversed(EDITS):
-        lines[start:stop] = [addition]
+    # A zero inference timeout leaves the SSE stream open until completion,
+    # upstream failure or disconnect. Idle HTTP keep-alive remains bounded.
+    line = lines[1528]
+    index = line.index(&#x27;if &#x27;) + len(&#x27;if &#x27;)
+    lines[1528] = line[:index] + &#x27;config.timeout_seconds &gt; 0 and &#x27; + line[index:]
+    line = lines[1900]
+    index = line.index(&#x27;,&#x27;)
+    lines[1900] = line[:index] + &#x27; or 300&#x27; + line[index:]
     result = &#x27;&#x27;.join(lines).encode(&#x27;utf-8&#x27;)
-    assert hashlib.sha256(result).hexdigest() == RESULT_SHA256
+    if hashlib.sha256(result).hexdigest() != RESULT_SHA256:
+        raise ValueError(&#x27;Local patch result checksum differs&#x27;)
     compile(result, str(path), &#x27;exec&#x27;)
     path.write_bytes(result)
     print(&#x27;Applied stateless lifecycle and management APIs:&#x27;, RESULT_SHA256)
@@ -677,7 +690,7 @@ Environment=RKLLM_LOG_LEVEL=1
 Environment=OMP_NUM_THREADS=2
 Environment=OPENBLAS_NUM_THREADS=2
 UMask=0077
-ExecStart=/opt/qwen3.5-2b/api-venv/bin/qwen3.5-2b /opt/qwen3.5-2b/src/app/fastapi_server_vlm.py --encoder_model /opt/qwen3.5-2b/models/qwen3.5_vision_rk3588.rknn --llm_model /opt/qwen3.5-2b/models/qwen3.5-2b_fp16_rk3588.rkllm --model_name Qwen3.5-2B --target_platform rk3588 --host 127.0.0.1 --port 18080 --max_context_len 2048 --embed_flash 1 --default_max_tokens 256 --default_temperature 0.1 --max_concurrent 1 --timeout 300 --rknn_core_num 3
+ExecStart=/opt/qwen3.5-2b/api-venv/bin/qwen3.5-2b /opt/qwen3.5-2b/src/app/fastapi_server_vlm.py --encoder_model /opt/qwen3.5-2b/models/qwen3.5_vision_rk3588.rknn --llm_model /opt/qwen3.5-2b/models/qwen3.5-2b_fp16_rk3588.rkllm --model_name Qwen3.5-2B --target_platform rk3588 --host 127.0.0.1 --port 18080 --max_context_len 2048 --embed_flash 1 --default_max_tokens 256 --default_temperature 0.1 --max_concurrent 1 --timeout 0 --rknn_core_num 3
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=45
@@ -1005,8 +1018,6 @@ import http.client
 import json
 import socket
 import sys
-import threading
-import time
 
 
 class UnixConnection(http.client.HTTPConnection):
@@ -1014,20 +1025,13 @@ class UnixConnection(http.client.HTTPConnection):
         self.sock=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
         self.sock.settimeout(self.timeout)
         self.sock.connect(self.host)
-        self.transport=self.sock
+        self.sock.settimeout(None)
 
 
-def interrupt(connection):
-    sock=getattr(connection,&#x27;transport&#x27;,None)
-    if sock is not None:
-        try:sock.shutdown(socket.SHUT_RDWR)
-        except OSError:pass
-
-
-def content_events(response, deadline):
+def content_events(response):
     &quot;&quot;&quot;Read bounded OpenAI-style SSE records, including multiline data fields.&quot;&quot;&quot;
     data=[];size=0;received=0
-    while time.monotonic()&lt;deadline:
+    while True:
         line=response.readline(32769)
         if len(line)&gt;32768:raise ValueError(&#x27;SSE line exceeds limit&#x27;)
         if not line:raise ValueError(&#x27;Incomplete SSE response&#x27;)
@@ -1054,7 +1058,6 @@ def content_events(response, deadline):
             if value:
                 if not isinstance(value,str):raise ValueError(&#x27;Invalid content delta&#x27;)
                 yield value
-    raise TimeoutError(&#x27;Generation deadline reached&#x27;)
 
 
 def main():
@@ -1066,19 +1069,16 @@ def main():
     payload=dict(model=&#x27;Qwen3.5-2B&#x27;,messages=[dict(role=&#x27;user&#x27;,content=args.prompt)],
                  enable_thinking=not args.no_thinking,stream=True,max_tokens=256,
                  temperature=0.6,top_p=0.95,top_k=20,presence_penalty=0.0,repeat_penalty=1.0)
-    connection=UnixConnection(args.unix_socket,timeout=180)
+    connection=UnixConnection(args.unix_socket,timeout=3)
     response=None
-    deadline=time.monotonic()+180
-    watchdog=threading.Timer(180,interrupt,args=(connection,));watchdog.daemon=True;watchdog.start()
     try:
         connection.request(&#x27;POST&#x27;,&#x27;/v1/chat/completions&#x27;,json.dumps(payload).encode(&#x27;utf-8&#x27;),{&#x27;Content-Type&#x27;:&#x27;application/json&#x27;})
         response=connection.getresponse()
         if response.status!=200:raise RuntimeError(&#x27;Model HTTP status &#x27;+str(response.status))
-        for value in content_events(response,deadline):
+        for value in content_events(response):
             sys.stdout.write(value);sys.stdout.flush()
         print()
     finally:
-        watchdog.cancel()
         if response is not None:response.close()
         connection.close()  # Interrupting this client cancels this stream only.
 
@@ -1086,15 +1086,12 @@ def main():
 if __name__==&#x27;__main__&#x27;:
     try:main()
     except KeyboardInterrupt:raise SystemExit(130)
-    except (OSError,ValueError,RuntimeError,TimeoutError) as exc:
+    except (OSError,ValueError,RuntimeError) as exc:
         print(str(exc),file=sys.stderr);raise SystemExit(1)
 </code></pre></details><details><summary>scripts/test_stream_chat.py</summary><pre><code class="python">import io
 import json
-import time
-import socket
-from types import SimpleNamespace
 import unittest
-from stream_chat import content_events,interrupt
+from stream_chat import content_events
 
 
 def event(delta):
@@ -1104,24 +1101,14 @@ def event(delta):
 class StreamTests(unittest.TestCase):
     def test_public_content_is_incremental_and_private_channel_is_omitted(self):
         source=io.BytesIO(event({&#x27;reasoning_content&#x27;:&#x27;PRIVATE_SENTINEL&#x27;})+event({&#x27;content&#x27;:&#x27;正&#x27;})+event({&#x27;content&#x27;:&#x27;文&#x27;})+b&#x27;data: [DONE]\n\n&#x27;)
-        chunks=content_events(source,time.monotonic()+1)
+        chunks=content_events(source)
         self.assertEqual(next(chunks),&#x27;正&#x27;);self.assertEqual(next(chunks),&#x27;文&#x27;)
         self.assertEqual(list(chunks),[])
 
     def test_truncation_and_unbounded_records_fail(self):
         for data in (event({&#x27;content&#x27;:&#x27;partial&#x27;}),b&#x27;data: &#x27;+b&#x27;x&#x27;*32769+b&#x27;\n\n&#x27;,event({&#x27;reasoning_content&#x27;:&#x27;x&#x27;*32769})):
             with self.subTest(size=len(data)),self.assertRaises(ValueError):
-                list(content_events(io.BytesIO(data),time.monotonic()+1))
-
-    def test_deadline_is_enforced(self):
-        with self.assertRaises(TimeoutError):list(content_events(io.BytesIO(),time.monotonic()-1))
-
-    def test_interrupt_shuts_down_transport_even_after_http_detaches_socket(self):
-        left,right=socket.socketpair()
-        try:
-            interrupt(SimpleNamespace(sock=None,transport=left))
-            right.settimeout(.1);self.assertEqual(right.recv(1),b&#x27;&#x27;)
-        finally:left.close();right.close()
+                list(content_events(io.BytesIO(data)))
 
 
 if __name__==&#x27;__main__&#x27;:unittest.main()

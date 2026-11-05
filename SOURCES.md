@@ -22,7 +22,7 @@
 
 2026-11-05，MCP Search Service。查询前复用上述固定版本与接口记录，补读 [Qwen3.5-2B 模型卡](https://huggingface.co/Qwen/Qwen3.5-2B/blob/15852e8c16360a2fea060d615a32b45270f8a8fc/README.md)、[阿里云 Chat Completions 参数](https://www.alibabacloud.com/help/en/model-studio/qwen-api-via-openai-chat-completions) 与 [深度思考说明](https://www.alibabacloud.com/help/en/model-studio/deep-thinking)。查询条件为 enable_thinking、reasoning_effort、thinking_budget、流式 reasoning_content / content 及模型支持范围。结果：2B 模型支持显式启用思考；云端档位和预算的适用范围不能直接套用到本地 RKLLM。
 
-本地核对 `apply_local_changes.py` 结果散列对应的服务源码：enable_thinking 为布尔开关；非关闭的 reasoning_effort 统一进入思考模式，没有档位差异；无 thinking_budget；SSE 分开输出私有推理与正文；Qwen 的 max_tokens 会扩展为原生生成额度。新增客户端只使用已支持的接口，不更改或分发第三方服务端源码。上述核查不新增板端性能测量。
+本地核对 `apply_local_changes.py` 结果散列对应的服务源码。enable_thinking 为布尔开关，非关闭的 reasoning_effort 统一进入思考模式，没有档位差异或 thinking_budget。SSE 分开输出私有推理与正文，Qwen 的 max_tokens 会扩展为原生生成额度。补丁让 `--timeout 0` 关闭流式无输出超时，HTTP 空闲连接保留有限等待时间。仓库只包含本地修改的编辑坐标和新增代码。上述核查未新增板端性能测量。
 
 ## 发布边界
 

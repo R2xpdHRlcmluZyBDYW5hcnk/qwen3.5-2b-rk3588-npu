@@ -18,7 +18,7 @@ Environment=RKLLM_LOG_LEVEL=1
 Environment=OMP_NUM_THREADS=2
 Environment=OPENBLAS_NUM_THREADS=2
 UMask=0077
-ExecStart=/opt/qwen3.5-2b/api-venv/bin/qwen3.5-2b /opt/qwen3.5-2b/src/app/fastapi_server_vlm.py --encoder_model /opt/qwen3.5-2b/models/qwen3.5_vision_rk3588.rknn --llm_model /opt/qwen3.5-2b/models/qwen3.5-2b_fp16_rk3588.rkllm --model_name Qwen3.5-2B --target_platform rk3588 --host 127.0.0.1 --port 18080 --max_context_len 2048 --embed_flash 1 --default_max_tokens 256 --default_temperature 0.1 --max_concurrent 1 --timeout 300 --rknn_core_num 3
+ExecStart=/opt/qwen3.5-2b/api-venv/bin/qwen3.5-2b /opt/qwen3.5-2b/src/app/fastapi_server_vlm.py --encoder_model /opt/qwen3.5-2b/models/qwen3.5_vision_rk3588.rknn --llm_model /opt/qwen3.5-2b/models/qwen3.5-2b_fp16_rk3588.rkllm --model_name Qwen3.5-2B --target_platform rk3588 --host 127.0.0.1 --port 18080 --max_context_len 2048 --embed_flash 1 --default_max_tokens 256 --default_temperature 0.1 --max_concurrent 1 --timeout 0 --rknn_core_num 3
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=45
