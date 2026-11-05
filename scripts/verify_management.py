@@ -1,6 +1,7 @@
 """Exercise the deployed Unix-socket API, including real native cancellation."""
 import http.client
 import json
+import os
 import socket
 import threading
 import time
@@ -8,6 +9,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path('/opt/qwen3.5-2b')
+EVIDENCE_DIR = Path(os.environ.get('EVIDENCE_DIR', ROOT / 'evidence'))
+EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
 SOCKET = '/run/qwen3.5-2b/inference.sock'
 
 class Connection(http.client.HTTPConnection):
@@ -100,5 +103,5 @@ result['invalid_image'] = {'status': status, 'response': invalid, 'idle': wait_i
 status, idle_abort = call('/v1/abort', {})
 assert status == 200 and idle_abort['status'] == 'idle', (status, idle_abort)
 result['idle_abort'] = idle_abort
-(ROOT / 'evidence/management-verification.json').write_text(json.dumps(result, ensure_ascii=False, indent=2))
+(EVIDENCE_DIR / 'management-verification.json').write_text(json.dumps(result, ensure_ascii=False, indent=2))
 print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)

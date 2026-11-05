@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+precision=${1:-fp16}
+if [[ $# -gt 1 || ( "$precision" != fp16 && "$precision" != w8a8 ) ]]; then
+  printf 'Usage: %s [fp16|w8a8]\n' "$0" >&2
+  exit 2
+fi
 export BUILD_DIR=${BUILD_DIR:-/var/tmp/qwen3.5-2b-build}
 mkdir -p "$BUILD_DIR"/{tools,models,outputs,logs,cache}
 cd "$BUILD_DIR"
+export BUILD_DIR=$PWD
+output_dir="$BUILD_DIR/outputs"
+if [[ "$precision" == w8a8 ]]; then output_dir="$output_dir/w8a8"; fi
 export UV_CACHE_DIR="$BUILD_DIR/cache/uv"
 export UV_PYTHON_INSTALL_DIR="$BUILD_DIR/python"
 export UV_PYTHON_BIN_DIR="$BUILD_DIR/tools"
@@ -28,11 +36,13 @@ git -C sdk sparse-checkout set --no-cone '/examples/multimodal_model_demo/export
 "$UV" pip install --python vision-venv/bin/python -c "$SCRIPT_DIR/vision-requirements.freeze.txt" rknn-toolkit2==2.5.0 transformers==4.57.0 accelerate==1.5.2 onnx==1.18.0
 bash "$SCRIPT_DIR/download_official.sh"
 export HF_HOME="$BUILD_DIR/cache/huggingface" HF_HUB_OFFLINE=1
-"$BUILD_DIR/llm-venv/bin/python" "$SCRIPT_DIR/convert_fp16.py" 2>&1 | tee logs/language-conversion.log
+language_log=logs/language-conversion.log
+if [[ "$precision" == w8a8 ]]; then language_log=logs/language-conversion-w8a8.log; fi
+"$BUILD_DIR/llm-venv/bin/python" "$SCRIPT_DIR/convert_language.py" "$precision" 2>&1 | tee "$language_log"
 cd "$BUILD_DIR/sdk/examples/multimodal_model_demo"
 "$BUILD_DIR/llm-venv/bin/python" export/export_vision.py --path "$BUILD_DIR/models/Qwen3.5-2B" --model_name qwen3.5 --height 448 --width 448 --device cpu 2>&1 | tee "$BUILD_DIR/logs/vision-export.log"
 "$BUILD_DIR/vision-venv/bin/python" export/export_vision_rknn.py --path ./onnx/qwen3.5_vision.onnx --model_name qwen3.5 --height 448 --width 448 --target-platform rk3588 2>&1 | tee "$BUILD_DIR/logs/vision-conversion.log"
-cp rknn/qwen3.5_vision_rk3588.rknn "$BUILD_DIR/outputs/"
-cd "$BUILD_DIR/outputs"
-sha256sum qwen3.5-2b_fp16_rk3588.rkllm qwen3.5_vision_rk3588.rknn > SHA256SUMS
+cp rknn/qwen3.5_vision_rk3588.rknn "$output_dir/"
+cd "$output_dir"
+sha256sum "qwen3.5-2b_${precision}_rk3588.rkllm" qwen3.5_vision_rk3588.rknn > SHA256SUMS
 cat SHA256SUMS

@@ -1,0 +1,98 @@
+[
+  {
+    "input": "请用两句话解释为什么会出现昼夜交替。",
+    "target": "地球自西向东绕地轴旋转，朝向太阳的一侧是白天，背向太阳的一侧是黑夜。随着地球转动，同一地点会先后进入受光和背光区域。"
+  },
+  {
+    "input": "把这段文字概括成一个标题：一条河流经过城区时，湿地拦截泥沙，为候鸟提供栖息地，也减缓了暴雨后的水流。",
+    "target": "城市湿地调节水流并保护候鸟"
+  },
+  {
+    "input": "将句子翻译成英语：报告应列出数据来源，并说明哪些结果还需要验证。",
+    "target": "The report should list its data sources and identify which results still need verification."
+  },
+  {
+    "input": "把这条库存记录转换为 JSON，只输出对象：物品为温度计，数量为三，已校准。",
+    "target": "{\"item\":\"温度计\",\"quantity\":3,\"calibrated\":true}"
+  },
+  {
+    "input": "写一个 Python 函数，接收一个字符串列表，返回去除首尾空白且非空的字符串。",
+    "target": "def clean(items):\n    return [text for item in items if (text := item.strip())]"
+  },
+  {
+    "input": "某列车在 09:20 出发，运行 45 分钟，再停靠 5 分钟。停靠结束时几点？写出步骤。",
+    "target": "09:20 加上 45 分钟为 10:05，再加上 5 分钟为 10:10。"
+  },
+  {
+    "input": "从现象中提取已知事实和待验证假设：应用日志显示连续三次读取超时，有人认为是网络拥塞。",
+    "target": "已知事实是日志记录了三次读取超时。网络拥塞是待验证假设，可查看延迟、丢包和连接池状态来区分原因。"
+  },
+  {
+    "input": "比较 USB-C 和 USB 3.2 的含义。",
+    "target": "USB-C 描述连接器的物理形状。USB 3.2 描述传输规范，设备和线材实际支持的速度还要看各自的规格。"
+  },
+  {
+    "input": "写一段说明，告诉新同事如何在应用升级前备份配置。",
+    "target": "先确认应用使用的配置路径和版本。将配置复制到权限受限的备份目录，校验文件可以读取，再记录原路径和恢复步骤。"
+  },
+  {
+    "input": "图片描述给出左边有一个红色杯子，右边有一把蓝色雨伞。问：杯子在雨伞哪一侧？",
+    "target": "杯子在雨伞的左侧。"
+  },
+  {
+    "input": "根据照片说明回答问题。画面显示一只站在浅水里的白鹭，背景是芦苇。主体是什么动物？",
+    "target": "主体是一只白鹭。"
+  },
+  {
+    "input": "图上有一个写着“入口”的指示牌，箭头向右。用简短中文说应该往哪走。",
+    "target": "朝右走。"
+  },
+  {
+    "input": "用户说应用启动后闪退。请给出三个有顺序的排查步骤。",
+    "target": "1. 记录应用版本、系统版本和复现步骤。\n2. 查看崩溃时的应用日志和系统日志。\n3. 使用相同输入复现，再逐一隔离配置与依赖。"
+  },
+  {
+    "input": "给这段对话写一句回复：甲说会议改到下午三点，乙需要确认自己能参加。",
+    "target": "收到，下午三点我可以参加。"
+  },
+  {
+    "input": "Please explain why a metal spoon feels colder than a wooden spoon in the same room.",
+    "target": "Metal conducts heat away from your hand faster than wood, so it feels colder even when both spoons have the same temperature."
+  },
+  {
+    "input": "Summarize in one sentence: The library extended opening hours on weekdays, but weekend hours stayed the same. The change starts on Monday.",
+    "target": "Starting Monday, the library will stay open longer on weekdays while keeping its weekend schedule."
+  },
+  {
+    "input": "Convert to a JSON array of two objects with keys name and count: two apples, five pears.",
+    "target": "[{\"name\":\"apple\",\"count\":2},{\"name\":\"pear\",\"count\":5}]"
+  },
+  {
+    "input": "Write an SQL query to count paid orders by customer_id in a table named orders.",
+    "target": "SELECT customer_id, COUNT(*) AS paid_orders\nFROM orders\nWHERE status = 'paid'\nGROUP BY customer_id;"
+  },
+  {
+    "input": "An alarm rang at 14:15 and stopped at 14:42. How long did it ring?",
+    "target": "It rang for 27 minutes."
+  },
+  {
+    "input": "The upper shelf holds three plates. The lower shelf holds a bowl. Which object is on the lower shelf?",
+    "target": "A bowl is on the lower shelf."
+  },
+  {
+    "input": "Describe the main subject and background from these notes: a cyclist crossing a bridge; mountains and clouds behind the bridge.",
+    "target": "The main subject is a cyclist crossing a bridge, with mountains and clouds in the background."
+  },
+  {
+    "input": "Separate the observation from the inference: A sidewalk is wet in the photo, so it probably rained.",
+    "target": "Observation: the sidewalk is wet. Inference: it may have rained."
+  },
+  {
+    "input": "Give two concrete ways to make a command-line error message more helpful.",
+    "target": "Name the input or file that caused the error, and describe an action the user can take to correct it."
+  },
+  {
+    "input": "Translate into Chinese: Make sure the replacement service is ready before removing the previous model.",
+    "target": "删除旧模型前，请确认替换服务已经就绪。"
+  }
+]

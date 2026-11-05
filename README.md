@@ -1,6 +1,6 @@
 # Qwen3.5-2B on RK3588 NPU
 
-非官方部署资料：在 8GB RK3588/RK3588S ARM64 Linux 上运行官方来源的 Qwen3.5-2B，保留视觉支持。使用 Rockchip 工具导出未量化 FP16，现成 VLM 服务提供本地 HTTP / Unix Socket 问答。
+非官方部署资料：在 8GB RK3588/RK3588S ARM64 Linux 上运行官方来源的 Qwen3.5-2B。Rockchip 工具支持导出 FP16 或 W8A8 语言模型，两种版本均搭配 FP16 视觉编码器，由 VLM 服务提供本地 HTTP / Unix Socket 问答。
 
 **完整教程：下载并打开 [deployment.html](deployment.html)**。HTML 的样式、配置、脚本和验证摘要全部内嵌，可离线阅读。安装和转换仍需从各原始发行方下载依赖。
 
@@ -11,7 +11,7 @@
 - 无状态：每个请求传完整 `messages`；请求前后清 KV，不保留服务端会话历史、不做跨请求缓存复用。
 - 管理接口：`POST /v1/abort`、`POST /v1/cache/clear`；忙碌清缓存返回 409。支持 SSE，流式客户端断开会取消工作线程。
 
-## 快速复现
+## FP16 快速复现
 
 先读 [第三方许可说明](THIRD_PARTY_NOTICES.md)。目标板应已有兼容 RKNPU 驱动；本次验证为 vendor 6.1.115 / RKNPU 0.9.8。脚本不更换内核。转换在 x86_64 Linux / WSL，运行在板端。
 
@@ -32,6 +32,24 @@ curl --fail --unix-socket /run/qwen3.5-2b/inference.sock http://localhost/health
 # 完成教程中的图文和中断验收后启用：
 systemctl enable qwen3.5-2b.service qwen3.5-2b-socket.socket
 ```
+
+## W8A8 语言模型
+
+使用同一份官方 Qwen3.5-2B 权重。RKLLM Toolkit 1.3.1 对语言模型采用 `w8a8`、`normal` 算法和精度优先的优化级别。仓库附带中英文文本校准集。视觉编码器沿用 FP16，调用方式与 FP16 版一致。 [Rockchip 多模态量化示例](https://github.com/airockchip/rknn-llm/blob/f7390530443bf84f0394255a449d7cbe81e69d1c/examples/multimodal_model_demo/export/export_rkllm.py)
+
+```bash
+# x86_64 Linux / WSL，沿用 FP16 教程的依赖和 BUILD_DIR
+bash scripts/convert_wsl.sh w8a8
+```
+
+将 `$BUILD_DIR/outputs/w8a8/` 中的两个模型和 `SHA256SUMS` 传到板端 `/opt/qwen3.5-2b/models/`，将新版 `scripts/` 传到 `/var/tmp/qwen35-repro/scripts/`。全新部署执行 `install_board.sh w8a8`。同版本运行时已经安装时，使用以下命令切换模型。
+
+```bash
+bash /var/tmp/qwen35-repro/scripts/install_board.sh w8a8 --reuse-runtime
+EVIDENCE_DIR=/var/tmp/qwen35-w8a8-evidence python3 /var/tmp/qwen35-repro/scripts/verify_api.py
+```
+
+安装脚本先校验模型，再停止当前服务与套接字，然后启动所选版本。验证图文问答通过后，若无需回退，可删除板端 `models/qwen3.5-2b_fp16_rk3588.rkllm`。校准集面向文本，图文冒烟测试仅验证接口和基本推理能力。
 
 ## 调用
 

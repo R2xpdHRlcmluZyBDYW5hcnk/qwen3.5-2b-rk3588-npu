@@ -1,6 +1,7 @@
 import base64
 import http.client
 import json
+import os
 import re
 import socket
 import threading
@@ -9,6 +10,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path('/opt/qwen3.5-2b')
+EVIDENCE_DIR = Path(os.environ.get('EVIDENCE_DIR', ROOT / 'evidence'))
+EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
 SOCKET_PATH = '/run/qwen3.5-2b/inference.sock'
 
 class UnixConnection(http.client.HTTPConnection):
@@ -72,12 +75,12 @@ try:
         result = {'test': name, 'prompt': prompt, 'seconds': elapsed, 'response': response,
                   'health_after_request': health}
         results.append(result)
-        (ROOT / 'evidence' / f'{name}-response.json').write_text(json.dumps(result, ensure_ascii=False, indent=2))
+        (EVIDENCE_DIR / f'{name}-response.json').write_text(json.dumps(result, ensure_ascii=False, indent=2))
         print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)
 finally:
     stop.set()
     thread.join()
-    (ROOT / 'evidence/api-load-samples.json').write_text(json.dumps(samples, ensure_ascii=False, indent=2))
+    (EVIDENCE_DIR / 'api-load-samples.json').write_text(json.dumps(samples, ensure_ascii=False, indent=2))
 
 max_load = [0, 0, 0]
 for sample in samples:
@@ -93,6 +96,6 @@ summary = {
     'minimum_swap_free_kib': min(item['swap_free_kib'] for item in samples),
     'service_cgroup_peak_memory_bytes': int(peak_file.read_text()) if peak_file.exists() else None,
 }
-(ROOT / 'evidence/api-verification-summary.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2))
+(EVIDENCE_DIR / 'api-verification-summary.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2))
 print('SUMMARY', json.dumps(summary, ensure_ascii=False, indent=2), flush=True)
 assert all(value > 0 for value in max_load), max_load
