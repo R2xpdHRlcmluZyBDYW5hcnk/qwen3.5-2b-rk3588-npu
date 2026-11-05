@@ -360,7 +360,43 @@ from pathlib import Path
 
 SOURCE_SHA256 = &quot;df046479b373c59a194f21632585b3b6e4f1789e02db82199e743326553dc255&quot;
 LIFECYCLE_SHA256 = &#x27;ef1e519fad3608d57415aefcb0f28914f5d3a08c1863a06945ad5db2e5ba84a2&#x27;
-RESULT_SHA256 = &#x27;f84c72587a9a5eaf969c951a6fb2215ca09579f0bd03c2bbad10efd4208799e5&#x27;
+STREAM_SHA256 = &#x27;f84c72587a9a5eaf969c951a6fb2215ca09579f0bd03c2bbad10efd4208799e5&#x27;
+RESULT_SHA256 = &#x27;accef34697eb78c0bf43ecf989f4bf2663decce9afbc82190e43bb41b6acd8e0&#x27;
+FINISH_EDITS = [
+    (850, 850, &#x27;&#x27;&#x27;class RKLLMTensorResult(ctypes.Structure):
+    _fields_ = [(&quot;data&quot;, ctypes.POINTER(ctypes.c_float)),
+                (&quot;width&quot;, ctypes.c_int), (&quot;num_tokens&quot;, ctypes.c_int)]
+
+
+class RKLLMPerfStat(ctypes.Structure):
+    _fields_ = [(&quot;prefill_time_ms&quot;, ctypes.c_float), (&quot;prefill_tokens&quot;, ctypes.c_int),
+                (&quot;generate_time_ms&quot;, ctypes.c_float), (&quot;generate_tokens&quot;, ctypes.c_int),
+                (&quot;memory_usage_mb&quot;, ctypes.c_float)]
+
+
+&#x27;&#x27;&#x27;),
+    (851, 852, &#x27;&#x27;&#x27;    _fields_ = [(&quot;text&quot;, ctypes.c_char_p), (&quot;token_id&quot;, ctypes.c_int32),
+                (&quot;last_hidden_layer&quot;, RKLLMTensorResult), (&quot;logits&quot;, RKLLMTensorResult),
+                (&quot;perf&quot;, RKLLMPerfStat)]
+&#x27;&#x27;&#x27;),
+    (882, 882, &#x27;&#x27;&#x27;        self.generation_budget = 0
+        self.token_callbacks = 0
+&#x27;&#x27;&#x27;),
+    (1029, 1029, &#x27;&#x27;&#x27;                if state_code == self.RKLLM_RUN_NORMAL and result_ptr and result_ptr.contents.token_id &gt;= 0:
+                    state.token_callbacks += 1
+&#x27;&#x27;&#x27;),
+    (1036, 1036, &#x27;&#x27;&#x27;                    stats = result_ptr.contents.perf if result_ptr else None
+                    generated = stats.generate_tokens if stats and stats.generate_tokens &gt; 0 else state.token_callbacks
+                    prefilled = stats.prefill_tokens if stats else 0
+                    if (state.generation_budget &gt; 1 and generated &gt;= state.generation_budget - 1
+                            or prefilled &gt; 0 and prefilled + generated &gt;= self.config.max_context_len - 1):
+                        state.finish_reason = &quot;length&quot;
+                    logger.info(&quot;[%s] inference finished: %s, prefill_tokens=%d, generated_tokens=%d&quot;,
+                                request_id, state.finish_reason, prefilled, generated)
+&#x27;&#x27;&#x27;),
+    (1116, 1116, &#x27;&#x27;&#x27;        state.generation_budget = infer_params.max_new_tokens
+&#x27;&#x27;&#x27;),
+]
 EDITS = [(881, 881, &#x27;        self.cancel_requested = threading.Event()\n&#x27;), (928, 928, &#x27;        self.control_lock = threading.Lock()\n        self.active_request_id = None\n        self.last_cache_positions = None\n&#x27;), (1009, 1009, &#x27;        self.lib.rkllm_abort.argtypes = [ctypes.c_void_p]\n        self.lib.rkllm_abort.restype = ctypes.c_int\n        self.lib.rkllm_is_running.argtypes = [ctypes.c_void_p]\n        self.lib.rkllm_is_running.restype = ctypes.c_int\n        self.lib.rkllm_get_kv_cache_size.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_int)]\n        self.lib.rkllm_get_kv_cache_size.restype = ctypes.c_int\n&#x27;), (1024, 1025, &#x27;&#x27;), (1027, 1028, &#x27;&#x27;), (1112, 1115, &#x27;            try:\n                self.clear_cache()\n                if not state.cancel_requested.is_set():\n                    with self.control_lock:\n                        self.active_request_id = request_id\n                    ret = self.lib.rkllm_run(\n                        self.handle,\n                        ctypes.byref(input_data),\n                        ctypes.byref(infer_params),\n                        ctypes.cast(request_id_buffer, ctypes.c_void_p),\n                    )\n                    if state.cancel_requested.is_set():\n                        state.error = None\n                        state.finish_reason = &quot;stop&quot;\n                    elif ret != 0 and not state.error:\n                        state.error = f&quot;rkllm_run failed with code {ret}&quot;\n            finally:\n                with self.control_lock:\n                    self.active_request_id = None\n                # Clear after success, native error, or cancellation, before\n                # advertising completion or releasing the inference slot.\n                try:\n                    self.clear_cache()\n                except Exception as error:\n                    state.error = str(error)\n&#x27;), (1116, 1126, &#x27;&#x27;), (1127, 1127, &#x27;\n    def clear_cache(self) -&gt; int:\n        ret = self.lib.rkllm_clear_kv_cache(self.handle, 0, None, None)\n        if ret != 0:\n            raise RuntimeError(f&quot;rkllm_clear_kv_cache failed with code {ret}&quot;)\n        positions = ctypes.c_int(-1)  # This deployment uses one batch.\n        ret = self.lib.rkllm_get_kv_cache_size(self.handle, ctypes.byref(positions))\n        if ret != 0 or positions.value != 0:\n            raise RuntimeError(f&quot;KV cache verification failed: ret={ret}, positions={positions.value}&quot;)\n        self.last_cache_positions = positions.value\n        return positions.value\n\n    def cancel(self, request_id: str, state: InferenceState) -&gt; dict:\n        state.cancel_requested.set()\n        deadline = time.monotonic() + 10\n        abort_code = None\n        while not state.completed.is_set() and time.monotonic() &lt; deadline:\n            with self.control_lock:\n                if self.active_request_id == request_id:\n                    abort_code = self.lib.rkllm_abort(self.handle)\n                    if abort_code != 0:\n                        raise RuntimeError(f&quot;rkllm_abort failed with code {abort_code}&quot;)\n            # Also cover cancellation in the small interval between assigning\n            # the active request and entering the native rkllm_run call.\n            state.completed.wait(0.01)\n        return {&quot;request_id&quot;: request_id, &quot;abort_code&quot;: abort_code,\n                &quot;status&quot;: &quot;cancelled&quot; if state.completed.is_set() else &quot;cancelling&quot;}\n&#x27;), (1371, 1371, &#x27;def finish_request(request_id: str, future) -&gt; None:\n    &quot;&quot;&quot;Keep the slot and callback state alive until the worker has stopped.&quot;&quot;&quot;\n    state = request_states.get(request_id)\n    if state and not state.completed.is_set():\n        state.cancel_requested.set()\n        executor.submit(runtime.llm.cancel, request_id, state)\n\n    def cleanup(_):\n        request_states.pop(request_id, None)\n        release_request_slot()\n\n    future.add_done_callback(cleanup)\n\n\n&#x27;), (1404, 1404, &#x27;    future = None\n&#x27;), (1414, 1415, &#x27;        future = executor.submit(\n&#x27;), (1478, 1480, &#x27;        if future is not None:\n            finish_request(request_id, future)\n        else:\n            request_states.pop(request_id, None)\n            release_request_slot()\n&#x27;), (1523, 1523, &#x27;        for request_id, state in list(request_states.items()):\n            await asyncio.to_thread(runtime.llm.cancel, request_id, state)\n        if executor:\n            await asyncio.to_thread(executor.shutdown, wait=True)\n&#x27;), (1524, 1526, &#x27;&#x27;), (1578, 1578, &#x27;        &quot;conversation_history&quot;: &quot;client_managed&quot;,\n        &quot;kv_policy&quot;: &quot;clear_before_and_after_each_request&quot;,\n        &quot;last_cleared_kv_positions&quot;: runtime.llm.last_cache_positions if runtime else None,\n&#x27;), (1579, 1579, &#x27;\n\n@app.post(&quot;/v1/abort&quot;)\nasync def abort_generation():\n    if runtime is None:\n        raise HTTPException(status_code=503, detail=&quot;VLM runtime is not initialized&quot;)\n    targets = [(key, value) for key, value in list(request_states.items())\n               if not value.completed.is_set()]\n    for _, state in targets:\n        state.cancel_requested.set()\n    results = [await asyncio.to_thread(runtime.llm.cancel, key, state)\n               for key, state in targets]\n    return {&quot;status&quot;: &quot;idle&quot; if not results else &quot;abort_requested&quot;, &quot;requests&quot;: results}\n\n\n@app.post(&quot;/v1/cache/clear&quot;)\nasync def clear_conversation_cache():\n    if runtime is None:\n        raise HTTPException(status_code=503, detail=&quot;VLM runtime is not initialized&quot;)\n    if active_requests or not runtime.llm.lock.acquire(blocking=False):\n        raise HTTPException(status_code=409, detail=&quot;Inference busy; abort and wait for idle first&quot;)\n    try:\n        return {&quot;status&quot;: &quot;cleared&quot;, &quot;kv_positions&quot;: runtime.llm.clear_cache()}\n    finally:\n        runtime.llm.lock.release()\n&#x27;), (1649, 1652, &#x27;    future = executor.submit(\n&#x27;), (1669, 1670, &#x27;    )\n    try:\n        state = await asyncio.shield(asyncio.wrap_future(future))\n&#x27;), (1704, 1706, &#x27;        finish_request(request_id, future)\n&#x27;)]
 
 def apply(path):
@@ -374,17 +410,21 @@ def apply(path):
         for start, stop, addition in reversed(EDITS):
             lines[start:stop] = [addition]
         data = &#x27;&#x27;.join(lines).encode(&#x27;utf-8&#x27;)
-    if hashlib.sha256(data).hexdigest() != LIFECYCLE_SHA256:
+    if hashlib.sha256(data).hexdigest() == LIFECYCLE_SHA256:
+        lines = data.decode(&#x27;utf-8&#x27;).splitlines(keepends=True)
+        # Keep an unlimited generation stream and a bounded idle HTTP connection.
+        line = lines[1528]
+        index = line.index(&#x27;if &#x27;) + len(&#x27;if &#x27;)
+        lines[1528] = line[:index] + &#x27;config.timeout_seconds &gt; 0 and &#x27; + line[index:]
+        line = lines[1900]
+        index = line.index(&#x27;,&#x27;)
+        lines[1900] = line[:index] + &#x27; or 300&#x27; + line[index:]
+        data = &#x27;&#x27;.join(lines).encode(&#x27;utf-8&#x27;)
+    if hashlib.sha256(data).hexdigest() != STREAM_SHA256:
         raise SystemExit(&#x27;Unexpected upstream version; refusing to change it&#x27;)
     lines = data.decode(&#x27;utf-8&#x27;).splitlines(keepends=True)
-    # A zero inference timeout leaves the SSE stream open until completion,
-    # upstream failure or disconnect. Idle HTTP keep-alive remains bounded.
-    line = lines[1528]
-    index = line.index(&#x27;if &#x27;) + len(&#x27;if &#x27;)
-    lines[1528] = line[:index] + &#x27;config.timeout_seconds &gt; 0 and &#x27; + line[index:]
-    line = lines[1900]
-    index = line.index(&#x27;,&#x27;)
-    lines[1900] = line[:index] + &#x27; or 300&#x27; + line[index:]
+    for start, stop, addition in reversed(FINISH_EDITS):
+        lines[start:stop] = [addition]
     result = &#x27;&#x27;.join(lines).encode(&#x27;utf-8&#x27;)
     if hashlib.sha256(result).hexdigest() != RESULT_SHA256:
         raise ValueError(&#x27;Local patch result checksum differs&#x27;)

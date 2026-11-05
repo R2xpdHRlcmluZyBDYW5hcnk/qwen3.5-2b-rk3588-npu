@@ -28,6 +28,10 @@
 
 2026-11-05 16:00（UTC+08:00），MCP Search Service。查询前复用固定模型 revision 和 RKLLM 版本记录，查询模型卡中的 262,144 及配置中的 `max_position_embeddings`。两处均确认原始模型原生上下文为 262,144 token。本项目的 `convert_language.py` 为两种精度均设置 `max_context=4096`。W8A8 加载日志报告 `model_dtype: W8A8` 与 `max_context_limit: 4096`。服务启动参数只能在当前模型文件的上限内选择窗口。 [官方模型卡](https://huggingface.co/Qwen/Qwen3.5-2B/blob/15852e8c16360a2fea060d615a32b45270f8a8fc/README.md) [官方模型配置](https://huggingface.co/Qwen/Qwen3.5-2B/blob/15852e8c16360a2fea060d615a32b45270f8a8fc/config.json)
 
+## 原生生成结束状态
+
+2026-11-05（UTC+08:00），MCP Search Service。复用上述 RKLLM 固定版本，查询 Linux API 头文件中的 `RKLLMResult`、`RKLLMPerfStat` 和 `generate_tokens`。结果确认原生回调结果包含预填充与生成 token 数。服务按固定 ABI 读取计数，达到原生生成或上下文额度时返回 `finish_reason: length`。 [Rockchip RKLLM API 头文件](https://github.com/airockchip/rknn-llm/blob/f7390530443bf84f0394255a449d7cbe81e69d1c/rkllm-runtime/Linux/librkllm_api/include/rkllm.h#L260-L295)
+
 ## 发布边界
 
 本仓库仅分发自行编写的教程、服务配置、转换/安装/验证脚本及本地新增代码，使用 MIT。没有收录第三方服务端源码、含上游源码上下文的差异补丁、模型、SDK、运行库或示例图片。安装脚本从原作者固定版本获取依赖；`apply_local_changes.py` 仅存储本地新增内容和数值编辑范围，并校验原始源码与结果散列。它不向使用者授予上游服务端的使用、修改或再分发许可。需要这些权限时，应向原作者确认；没有明确许可的上游不能作为可自由再分发的软件打包。
